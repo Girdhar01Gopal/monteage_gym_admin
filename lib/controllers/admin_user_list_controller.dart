@@ -1,63 +1,154 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:get_storage/get_storage.dart' hide Data;
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+import '../models/membermodel.dart';
 
 class AdminUserListController extends GetxController {
-  var users = <Map<String, String>>[].obs;
-  var filteredUsers = <Map<String, String>>[].obs;
-  var expandedIndex = RxInt(-1);
-  RxString searchQuery = ''.obs;
+  final _storage = GetStorage();
+  var members = <Data>[].obs;
+  var filteredMembers = <Data>[].obs;
+  var searchQuery = ''.obs;
+  final imageFile = Rx<File?>(null);
+  final expandedCardIndex = (-1).obs;
+  var gymId;
 
   @override
   void onInit() {
     super.onInit();
-    fetchUserList();
+    _loadGymId();
   }
 
-  void fetchUserList() async {
-    await Future.delayed(Duration(seconds: 2));
-
-    users.addAll([
-      {'name': 'John Doe', 'email': 'john.doe@example.com', 'phone': '9876543210', 'address': '123 Main St'},
-      {'name': 'Jane Smith', 'email': 'jane.smith@example.com', 'phone': '9123456789', 'address': '456 Elm St'},
-      {'name': 'Alex Johnson', 'email': 'alex.johnson@example.com', 'phone': '9988776655', 'address': '789 Oak St'},
-      {'name': 'Sophia Brown', 'email': 'sophia.brown@example.com', 'phone': '9988776655', 'address': '321 Pine St'},
-    ]);
-
-    filteredUsers.assignAll(users);
+  // Load the Gym ID from storage or fallback if invalid
+  void _loadGymId() async {
+    gymId = await _storage.read('gymId');
+    if (gymId == null || gymId == 0) {
+      Get.snackbar("Error", "Invalid Gym ID", backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+    _loadMembersFromAPI();
   }
 
-  void applySearch(String query) {
+  // Fetch members from API using Gym ID
+  Future<void> _loadMembersFromAPI() async {
+    final url = Uri.parse("https://montgymapi.eduagentapp.com/api/MonteageGymApp/ViewMember/$gymId");
+    print("Fetching data from URL: $url");
+
+    try {
+      final response = await http.get(url, headers: {"Content-Type": "application/json"});
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['statuscode'] == 200) {
+          members.assignAll(
+            List<Data>.from(data['data'].map((v) => Data.fromJson(v))),
+          );
+          // Save the fetched data to local storage
+          _storage.write('members', members.toList());
+        } else {
+          Get.snackbar("Error", "Failed to load members", backgroundColor: Colors.red, colorText: Colors.white);
+        }
+      } else {
+        Get.snackbar("Error", "Failed to fetch members from server", backgroundColor: Colors.red, colorText: Colors.white);
+      }
+    } catch (e) {
+      Get.snackbar("Error", "An error occurred: $e", backgroundColor: Colors.red, colorText: Colors.white);
+    }
+
+    // Update the filtered list after loading the data, filtering based on 'Action'
+    filteredMembers.assignAll(members);
+  }
+
+  // Add a new member to the Active list
+  void addMember(Data newMember) {
+    newMember.action = "Active";  // Ensure the new member is added as Active
+    members.add(newMember);  // Add to the list
+    filteredMembers.assignAll(members);  // Update the filtered list to include the new member
+  }
+
+  void saveMembers() {
+    _storage.write('members', members.toList());  // Save updated list to local storage
+  }
+
+  // Filter members by name, email, or phone
+  void filterMembers(String query) {
     searchQuery.value = query;
     if (query.isEmpty) {
-      filteredUsers.assignAll(users);
+      filteredMembers.assignAll(members);
     } else {
       final lower = query.toLowerCase();
-      filteredUsers.assignAll(users.where((user) =>
-      (user['name'] ?? '').toLowerCase().contains(lower) ||
-          (user['email'] ?? '').toLowerCase().contains(lower) ||
-          (user['phone'] ?? '').toLowerCase().contains(lower)));
+      filteredMembers.assignAll(members.where((member) {
+        return member.name!.toLowerCase().contains(lower) ||
+            member.emailid!.toLowerCase().contains(lower) ||
+            member.phone!.toLowerCase().contains(lower);
+      }).toList());
     }
   }
 
-  void toggleExpansion(int index) {
-    expandedIndex.value = expandedIndex.value == index ? -1 : index;
+  // Toggle card expansion
+  void toggleCardExpansion(int index) {
+    expandedCardIndex.value = (expandedCardIndex.value == index) ? -1 : index;
   }
 
-  Future<void> launchEmail(String email) async {
-    final url = 'mailto:$email';
-    if (await canLaunch(url)) {
-      await launch(url);
-    } else {
-      Get.snackbar("Error", "Could not open email client.");
-    }
+  // Delete a member from the list
+  void deleteMember(int index) {
+    members.removeAt(index);  // Remove member from list
+    saveMembers();  // Save the updated list to storage
+    filterMembers(searchQuery.value);  // Reapply filter (if any)
+    Get.snackbar("Deleted", "Member removed", backgroundColor: Colors.red, colorText: Colors.white);
   }
 
-  Future<void> launchPhone(String phone) async {
-    final url = 'tel:$phone';
-    if (await canLaunch(url)) {
-      await launch(url);
-    } else {
-      Get.snackbar("Error", "Could not make a phone call.");
+  // Confirm deletion of a member
+  void deleteMemberWithConfirmation(int index) {
+    Get.defaultDialog(
+      title: "Confirm Deletion",
+      middleText: "Are you sure you want to delete this member?",
+      textCancel: "No",
+      textConfirm: "Yes",
+      confirmTextColor: Colors.white,
+      onConfirm: () {
+        deleteMember(index);
+        Get.back();
+      },
+    );
+  }
+
+  // Show image picker options (Camera/Gallery)
+  void showImagePickerOptions() {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text("Camera"),
+              onTap: () => _pickImage(ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text("Gallery"),
+              onTap: () => _pickImage(ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Pick an image (either from camera or gallery)
+  Future<void> _pickImage(ImageSource source) async {
+    final picked = await ImagePicker().pickImage(source: source, imageQuality: 80);
+    if (picked != null) {
+      imageFile.value = File(picked.path);
     }
+    Get.back();
   }
 }

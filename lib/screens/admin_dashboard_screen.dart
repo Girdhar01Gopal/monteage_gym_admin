@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:percent_indicator/circular_percent_indicator.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 import '../controllers/admin_dashboard_controller.dart';
 import '../infrastructure/app_drawer/admin_drawer.dart';
 import '../infrastructure/routes/admin_routes.dart';
-import '../utils/constants/color_constants.dart';
-import '../utils/custom_text.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   @override
@@ -46,7 +45,7 @@ class AdminDashboardScreen extends StatelessWidget {
                   ),
                   Center(
                     child: Image.asset(
-                      'assets/images/monteage_logo_white.PNG',
+                      'assets/images/logo.jpeg',
                       height: 50.h,
                     ),
                   ),
@@ -88,16 +87,37 @@ class AdminDashboardScreen extends StatelessWidget {
           children: [
             _buildWelcomeSection(),
             SizedBox(height: 16.h),
-            _buildProgressIndicators(),
-            SizedBox(height: 22.h),
-            _buildSectionHeader("Stats Overview"),
+            _buildCollectionIndicators(controller),
+            SizedBox(height: 20.h),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSectionHeader("User Overview"),
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _legendBox(Colors.amber, "Morning"),
+                        SizedBox(width: 6),
+                        _legendBox(Colors.deepOrange, "Evening"),
+                        SizedBox(width: 6),
+                        _legendBox(Colors.blue, "Total"),
+                        SizedBox(width: 6),
+                        _legendBox(Colors.green, "Active"),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
             SizedBox(height: 10.h),
-            _buildStatsCards(controller),
+            _buildCombinedChart(controller),
             SizedBox(height: 20.h),
             _buildSectionHeader("Quick Actions"),
-            SizedBox(height: 8.h),
+            SizedBox(height: 10.h),
             _buildActionButtons(),
-            SizedBox(height: 5.h),
           ],
         ),
       ),
@@ -108,7 +128,7 @@ class AdminDashboardScreen extends StatelessWidget {
     return Row(
       children: [
         Text(
-          "Monteage GYM!",
+          "THE JUNGLE GYM!",
           style: GoogleFonts.poppins(
             fontSize: 22.sp,
             fontWeight: FontWeight.w600,
@@ -121,42 +141,55 @@ class AdminDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressIndicators() {
+  Widget _buildCollectionIndicators(AdminDashboardController controller) {
+    final currentMonth = DateFormat.MMMM().format(DateTime.now());
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _buildCircularIndicator("Today's Collection", 0.75, Color(0xFF4CAF50)),
-        _buildCircularIndicator("Monthly Collection", 0.55, Color(0xFF2196F3)),
+        Obx(() => _buildClickableIndicator(
+            "Today's Collection", controller.totalFeePaid.value, AdminRoutes.DAILY_COLLECTION)),
+        Obx(() => _buildClickableIndicator(
+            "$currentMonth Collection", controller.monthlyCollection.value, AdminRoutes.DAILY_COLLECTION)),
       ],
+    );
+
+  }
+
+  // Adding click functionality to the indicator cards
+  Widget _buildClickableIndicator(String label, double amount, String route) {
+    return GestureDetector(
+      onTap: () => Get.toNamed(route), // Navigate to View Collection screen
+      child: _styledIndicator(label, amount),
     );
   }
 
-  Widget _buildCircularIndicator(String label, double percent, Color color) {
-    return Column(
-      children: [
-        CircularPercentIndicator(
-          radius: 52.r,
-          lineWidth: 10.w,
-          percent: percent,
-          center: Text(
-            "${(percent * 100).toInt()}%",
-            style: GoogleFonts.poppins(fontSize: 18.sp, fontWeight: FontWeight.bold),
+  Widget _styledIndicator(String label, double amount) {
+    return Container(
+      width: 160.w,
+      padding: EdgeInsets.all(16.w),
+      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            spreadRadius: 2,
+            blurRadius: 6,
+            offset: Offset(0, 3),
           ),
-          progressColor: color,
-          backgroundColor: Colors.grey.shade200,
-          circularStrokeCap: CircularStrokeCap.round,
-          animation: true,
-        ),
-        SizedBox(height: 10.h),
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey.shade800,
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            "₹ ${amount.toStringAsFixed(2)}",
+            style: TextStyle(fontSize: 22.sp, fontWeight: FontWeight.bold, color: Colors.indigo),
           ),
-        ),
-      ],
+          SizedBox(height: 8.h),
+          Text(label, style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade800)),
+        ],
+      ),
     );
   }
 
@@ -171,41 +204,101 @@ class AdminDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatsCards(AdminDashboardController controller) {
-    return Column(
+  Widget _legendBox(Color color, String label) {
+    return Row(
       children: [
-        Obx(() => InkWell(
-          onTap: () => Get.toNamed(AdminRoutes.ADMIN_USER_LIST),
-          child: _buildStatCard(" Total Users", controller.totalUsers.toString()),
-        )),
-        SizedBox(height: 10.h),
-        Obx(() => InkWell(
-          onTap: () => Get.toNamed(AdminRoutes.ADMIN_ACTIVE_USERS),
-          child: _buildStatCard(" Active Users", controller.activeUsers.toString()),
-        )),
+        Container(width: 10, height: 10, color: color, margin: const EdgeInsets.only(right: 4)),
+        Text(label, style: const TextStyle(fontSize: 12)),
       ],
     );
   }
 
-  Widget _buildStatCard(String title, String value) {
-    return Card(
-      elevation: 5,
-      shadowColor: Colors.black.withOpacity(0.9),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
-      child: ListTile(
-        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-        title: Text(
-          title,
-          style: GoogleFonts.poppins(fontSize: 16.sp, fontWeight: FontWeight.w600),
-        ),
-        trailing: Text(
-          value,
-          style: GoogleFonts.poppins(
-            fontSize: 20.sp,
-            fontWeight: FontWeight.bold,
-            color: Colors.indigo,
-          ),
-        ),
+  Widget _buildCombinedChart(AdminDashboardController controller) {
+    return AspectRatio(
+      aspectRatio: 1.6,
+      child: Stack(
+        children: [
+          Obx(() => BarChart(
+            BarChartData(
+              barGroups: List.generate(controller.months.length, (index) {
+                final morning = controller.morningUsers[index].toDouble();
+                final evening = controller.eveningUsers[index].toDouble();
+                return BarChartGroupData(
+                  x: index,
+                  barRods: [
+                    BarChartRodData(
+                      fromY: 0,
+                      toY: morning,
+                      color: Colors.amber,
+                      width: 14,
+                      borderRadius: BorderRadius.zero,
+                    ),
+                    BarChartRodData(
+                      fromY: morning,
+                      toY: morning + evening,
+                      color: Colors.deepOrange,
+                      width: 14,
+                      borderRadius: BorderRadius.zero,
+                    ),
+                  ],
+                );
+              }),
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    getTitlesWidget: (value, _) {
+                      final index = value.toInt();
+                      return Text(
+                        index >= 0 && index < controller.months.length
+                            ? controller.months[index]
+                            : '',
+                        style: const TextStyle(fontSize: 10),
+                      );
+                    },
+                  ),
+                ),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(showTitles: true, reservedSize: 30, interval: 20),
+                ),
+                topTitles: AxisTitles(),
+                rightTitles: AxisTitles(),
+              ),
+              gridData: FlGridData(show: true),
+              barTouchData: BarTouchData(enabled: false),
+              borderData: FlBorderData(show: false),
+            ),
+          )),
+          Obx(() => LineChart(
+            LineChartData(
+              lineBarsData: [
+                LineChartBarData(
+                  spots: List.generate(
+                    controller.totalUsersPerMonth.length,
+                        (i) => FlSpot(i.toDouble(), controller.totalUsersPerMonth[i].toDouble()),
+                  ),
+                  isCurved: true,
+                  color: Colors.blue,
+                  barWidth: 2,
+                  dotData: FlDotData(show: true),
+                ),
+                LineChartBarData(
+                  spots: List.generate(
+                    controller.activeUsersPerMonth.length,
+                        (i) => FlSpot(i.toDouble(), controller.activeUsersPerMonth[i].toDouble()),
+                  ),
+                  isCurved: true,
+                  color: Colors.green,
+                  barWidth: 2,
+                  dotData: FlDotData(show: true),
+                ),
+              ],
+              titlesData: FlTitlesData(show: false),
+              gridData: FlGridData(show: false),
+              borderData: FlBorderData(show: false),
+            ),
+          )),
+        ],
       ),
     );
   }
@@ -213,43 +306,18 @@ class AdminDashboardScreen extends StatelessWidget {
   Widget _buildActionButtons() {
     return Column(
       children: [
-        _buildDashboardButton(
-          label: "View Collection's",
-          icon: Icons.calendar_today,
-          route: AdminRoutes.DAILY_COLLECTION,
-          color: Color(0xFF0288D1),
-        ),
+        _dashboardButton("View Collection's", Icons.calendar_today, AdminRoutes.DAILY_COLLECTION, Color(0xFF0288D1)),
         SizedBox(height: 12.h),
-        _buildDashboardButton(
-          label: "Manage GYM/Plans",
-          icon: Icons.manage_accounts,
-          route: AdminRoutes.ADMIN_MANAGE_PLAN,
-          color: Color(0xFFD81B60),
-        ),
+        _dashboardButton("Manage package's", Icons.manage_accounts, AdminRoutes.ADMIN_MANAGE_PLAN, Color(0xFFD81B60)),
         SizedBox(height: 12.h),
-        _buildDashboardButton(
-          label: "Fee Summary",
-          icon: Icons.currency_rupee,
-          route: AdminRoutes.ADMIN_FEE_SUMMARY,
-          color: Color(0xFF388E3C),
-        ),
+        _dashboardButton("Total Payment Details", Icons.currency_rupee, AdminRoutes.ADMIN_FEE_PAYMENTS, Color(0xFF388E3C)),
         SizedBox(height: 12.h),
-        _buildDashboardButton(
-          label: "Receive Payment (QR)",
-          icon: Icons.qr_code,
-          route: AdminRoutes.ADMIN_QR_PAYMENT,
-          color: Color(0xFF512DA8),
-        ),
+        _dashboardButton("Receive Payment (QR)", Icons.qr_code, AdminRoutes.ADMIN_QR_PAYMENT, Color(0xFF512DA8)),
       ],
     );
   }
 
-  Widget _buildDashboardButton({
-    required String label,
-    required IconData icon,
-    required String route,
-    required Color color,
-  }) {
+  Widget _dashboardButton(String label, IconData icon, String route, Color color) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
@@ -260,10 +328,7 @@ class AdminDashboardScreen extends StatelessWidget {
           backgroundColor: color,
           elevation: 3,
           padding: EdgeInsets.symmetric(vertical: 14.h),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.r),
-          ),
-          textStyle: GoogleFonts.poppins(fontSize: 16.sp, fontWeight: FontWeight.bold),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
         ),
       ),
     );

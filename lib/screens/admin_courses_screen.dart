@@ -58,4 +58,4 @@ class AdminCoursesScreen extends StatelessWidget {
       ),
     );
   }
-}
+ }

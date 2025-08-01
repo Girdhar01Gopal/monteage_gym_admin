@@ -29,7 +29,7 @@ class AdminDetailsScreen extends GetView<AdminDetailsController> {
                   width: 30.w,
                 ),
                 Image.asset(
-                  ImageConstatnts.LOGO,
+                  ImageConstatnts.LOGO1,
                   height: 50.h,
                 ),
               ],

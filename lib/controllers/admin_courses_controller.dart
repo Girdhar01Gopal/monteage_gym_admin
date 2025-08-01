@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 class AdminCoursesController extends GetxController {
   var courses = <Map<String, dynamic>>[].obs;
   var filteredCourses = <Map<String, dynamic>>[].obs;
-  var searchQuery = ''.obs;
 
   @override
   void onInit() {
@@ -12,46 +11,66 @@ class AdminCoursesController extends GetxController {
   }
 
   void fetchCourses() async {
-    await Future.delayed(Duration(seconds: 1));
+    await Future.delayed(Duration(milliseconds: 500));
+    final now = DateTime.now();
     courses.addAll([
-      {'name': 'Yoga', 'description': 'A relaxing and mind-body exercise program.', 'isActive': true},
-      {'name': 'Zumba', 'description': 'A high-energy dance workout for fitness.', 'isActive': true},
-      {'name': 'HIIT', 'description': 'High-intensity interval training to burn fat.', 'isActive': false},
-      {'name': 'Pilates', 'description': 'A low-impact exercise focusing on flexibility.', 'isActive': true},
-      {'name': 'Cardio', 'description': 'Aerobic exercise to improve cardiovascular health.', 'isActive': true},
-      {'name': 'Strength Training', 'description': 'Exercises to increase muscle strength.', 'isActive': false},
-      {'name': 'Boxing', 'description': 'A full-body workout through punching exercises.', 'isActive': true},
-      {'name': 'Spin Class', 'description': 'Indoor cycling for endurance and strength.', 'isActive': true},
-      {'name': 'Crossfit', 'description': 'Functional training for strength and conditioning.', 'isActive': false},
-      {'name': 'Kickboxing', 'description': 'A cardio workout combining martial arts with boxing.', 'isActive': true},
+      {
+        'name': 'Yoga',
+        'description': 'Relaxing and mindful exercise.',
+        'isActive': true,
+        'createdAt': now,
+        'updatedAt': now,
+      },
+      {
+        'name': 'Zumba',
+        'description': 'High-energy dance workout.',
+        'isActive': true,
+        'createdAt': now,
+        'updatedAt': now,
+      },
+      {
+        'name': 'HIIT',
+        'description': 'High-intensity interval training.',
+        'isActive': false,
+        'createdAt': now,
+        'updatedAt': now,
+      },
     ]);
     filteredCourses.assignAll(courses);
   }
 
+  List<Map<String, dynamic>> get activeCourses =>
+      filteredCourses.where((e) => e['isActive'] == true).toList();
+
+  List<Map<String, dynamic>> get inactiveCourses =>
+      filteredCourses.where((e) => e['isActive'] == false).toList();
+
   void addCourse(Map<String, dynamic> course) {
     courses.add(course);
-    applySearchFilter(searchQuery.value);
+    filteredCourses.assignAll(courses);
   }
 
   void updateCourse(Map<String, dynamic> oldCourse, Map<String, dynamic> newCourse) {
-    var index = courses.indexOf(oldCourse);
+    final index = courses.indexOf(oldCourse);
     if (index != -1) {
       courses[index] = newCourse;
-      applySearchFilter(searchQuery.value);
+      filteredCourses.assignAll(courses);
     }
   }
 
-  void applySearchFilter(String query) {
-    searchQuery.value = query;
-    if (query.isEmpty) {
+  void deleteCourse(Map<String, dynamic> course) {
+    courses.remove(course);
+    filteredCourses.assignAll(courses);
+  }
+
+  void searchCourses(String query) {
+    if (query.trim().isEmpty) {
       filteredCourses.assignAll(courses);
     } else {
-      filteredCourses.assignAll(
-        courses.where((course) => (course['name'] ?? '')
-            .toString()
-            .toLowerCase()
-            .contains(query.toLowerCase())),
-      );
+      final lower = query.toLowerCase();
+      filteredCourses.assignAll(courses.where((c) =>
+      (c['name'] ?? '').toString().toLowerCase().contains(lower) ||
+          (c['description'] ?? '').toString().toLowerCase().contains(lower)));
     }
   }
 }

@@ -2,83 +2,85 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../controllers/admin_notification_controller.dart';
-import '../utils/constants/color_constants.dart';
+
 
 class AdminNotificationsScreen extends StatelessWidget {
-  final controller = Get.find<AdminNotificationController>();
-  final searchController = TextEditingController();
+  final _ctrl = Get.put(AdminNotificationController());
+
+  AdminNotificationsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text("Notification's", style: TextStyle(color: Colors.white)),
-        backgroundColor: AppColor.APP_Color_Indigo,
+        title: const Text("Notifications",style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.purple,
         leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Get.back()),
+          icon: const Icon(Icons.arrow_back,color: Colors.white),
+          onPressed: Get.back,
+        ),
         actions: [
           IconButton(
-            icon: Icon(Icons.search, color: Colors.white),
+            icon: const Icon(Icons.search,color: Colors.white,),
             onPressed: () => _showSearchDialog(context),
-          )
+          ),
         ],
       ),
       body: Obx(() {
-        return RefreshIndicator(
-          onRefresh: () async {
-            await controller.fetchNotifications();
+        final list = _ctrl.filteredNotifications;
+        if (list.isEmpty && _ctrl.searchQuery.isNotEmpty) {
+          return Center(child: Text('No notifications for "${_ctrl.searchQuery}"'));
+        }
+        return ListView.separated(
+          itemCount: list.length,
+          separatorBuilder: (_, __) => const Divider(),
+          itemBuilder: (_, i) {
+            final item = list[i];
+            final ts = item.date ?? item.nextPaymentDate ?? '';
+            DateTime dt;
+            try {
+              dt = DateTime.parse(ts);
+            } catch (_) {
+              dt = DateTime.now();
+            }
+            return ListTile(
+              leading: const Icon(Icons.notifications_on, color: Colors.pink),
+              title: Text(item.name ?? '–', style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Text(item.message ?? '–'),
+              trailing: Text(
+                DateFormat('hh:mm a').format(dt),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            );
           },
-          child: controller.filteredNotifications.isEmpty
-              ? ListView(
-            children: [
-              SizedBox(height: 100),
-              Center(child: Text("No notifications available")),
-            ],
-          )
-              : ListView.separated(
-            padding: EdgeInsets.only(top: 10),
-            itemCount: controller.filteredNotifications.length,
-            separatorBuilder: (_, __) => Divider(height: 1),
-            itemBuilder: (context, index) {
-              final notification = controller.filteredNotifications[index];
-              return ListTile(
-                leading: Icon(Icons.notifications_active,
-                    color: AppColor.APP_Color_Pink),
-                title: Text(notification.title),
-                subtitle: Text(notification.message),
-                trailing: Text(
-                  DateFormat('hh:mm a').format(notification.date),
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              );
-            },
-          ),
         );
       }),
     );
   }
 
   void _showSearchDialog(BuildContext context) {
-    searchController.text = controller.searchQuery.value;
-
+    final tc = TextEditingController(text: _ctrl.searchQuery.value);
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text("Search Notifications"),
+        title: const Text('Search Notifications'),
         content: TextField(
-          controller: searchController,
-          autofocus: true,
-          decoration: InputDecoration(hintText: "Search by title/message"),
-          onChanged: controller.applySearch,
+          controller: tc,
+          decoration: const InputDecoration(hintText: 'Enter keyword'),
+          onChanged: _ctrl.applySearch,
         ),
         actions: [
           TextButton(
             onPressed: () {
-              controller.applySearch(searchController.text);
-              Get.back();
+              tc.clear();
+              _ctrl.applySearch('');
             },
-            child: Text("Search", style: TextStyle(color: AppColor.APP_Color_Indigo)),
+            child: const Text('Clear'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Done'),
           ),
         ],
       ),

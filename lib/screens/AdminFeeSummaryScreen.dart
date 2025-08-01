@@ -25,7 +25,7 @@ class AdminFeeSummaryScreen extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.search, color: Colors.white),
             onPressed: () => _showSearchDialog(context, controller),
-          )
+          ),
         ],
       ),
       body: Obx(() {

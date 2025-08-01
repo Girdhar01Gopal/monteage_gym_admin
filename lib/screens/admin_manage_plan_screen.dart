@@ -10,89 +10,125 @@ class AdminManagePlanScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Text("Manage Gym Package's", style: TextStyle(color: Colors.white)),
-        backgroundColor: AppColor.APP_Color_Indigo,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Get.back(),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          title: const Text("Manage Gym Package's", style: TextStyle(color: Colors.white)),
+          backgroundColor: AppColor.APP_Color_Indigo,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Get.back(),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.search, color: Colors.white),
+              onPressed: () => _showSearchDialog(context),
+            )
+          ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(48),
+            child: Container(
+              color: Colors.white, // White background for the TabBar
+              child: const TabBar(
+                labelColor: AppColor.APP_Color_Indigo, // Selected tab text color
+                unselectedLabelColor: Colors.grey,     // Unselected tab text color
+                indicatorColor: AppColor.APP_Color_Indigo, // Indicator color
+                indicatorWeight: 3,
+                tabs: [
+                  Tab(text: "Active Plans"),
+                  Tab(text: "Inactive Plans"),
+                ],
+              ),
+            ),
+          ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.search, color: Colors.white),
-            onPressed: () => _showSearchDialog(context),
-          )
-        ],
-      ),
-      body: Obx(() {
-        if (controller.filteredPlans.isEmpty) {
-          return Center(child: Text("No plans found."));
-        }
-        return ListView.builder(
-          controller: controller.scrollController,
-          padding: EdgeInsets.all(16),
-          itemCount: controller.filteredPlans.length,
-          itemBuilder: (context, index) {
-            final plan = controller.filteredPlans[index];
-            return Dismissible(
-              key: Key(plan.id.toString()),
-              direction: DismissDirection.endToStart,
-              background: Container(
-                color: Colors.red,
-                alignment: Alignment.centerRight,
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Icon(Icons.delete, color: Colors.white),
-              ),
-              onDismissed: (_) => controller.deletePlan(index),
-              child: Card(
-                elevation: 4,
-                child: ListTile(
-                  title: Text('${plan.title} Plan', style: TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 6.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Duration: ${plan.duration}'),
-                        Text('Price: ₹${plan.price.toStringAsFixed(2)}'),
-                        SizedBox(height: 4),
-                        Text('Includes:', style: TextStyle(fontWeight: FontWeight.bold)),
-                        ...plan.features.map((f) => Text('• $f')).toList(),
-                      ],
-                    ),
-                  ),
-                  trailing: IconButton(
-                    icon: Icon(Icons.edit, color: Colors.indigo),
-                    onPressed: () => _showEditDialog(context, controller, index, plan),
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      }),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddDialog(context),
-        backgroundColor: Colors.indigo,
-        child: Icon(Icons.add, color: Colors.white),
+
+        body: TabBarView(
+          children: [
+            Obx(() => _buildPlanList(context, controller.activePlans)),
+            Obx(() => _buildPlanList(context, controller.inactivePlans)),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          backgroundColor: Colors.indigo,
+          onPressed: () => _showAddDialog(context),
+          child: const Icon(Icons.add, color: Colors.white),
+        ),
       ),
     );
   }
 
-  void _showSearchDialog(BuildContext context) {
-    final controller = Get.find<AdminManagePlanController>();
-    searchController.text = controller.searchQuery.value;
+  Widget _buildPlanList(BuildContext context, List<GymPlan> plans) {
+    if (plans.isEmpty) {
+      return const Center(child: Text("No plans found."));
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: plans.length,
+      itemBuilder: (context, index) {
+        final plan = plans[index];
+        final fullIndex = controller.plans.indexWhere((p) => p.id == plan.id);
+        return Dismissible(
+          key: Key(plan.id.toString()),
+          direction: DismissDirection.endToStart,
+          background: Container(
+            color: Colors.red,
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: const Icon(Icons.delete, color: Colors.white),
+          ),
+          onDismissed: (_) => controller.deletePlanById(plan.id),
+          child: Card(
+            elevation: 4,
+            color: _getCardColor(plan.title),
+            child: ListTile(
+              title: Text('${plan.title} Plan', style: const TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Duration: ${plan.duration}'),
+                  Text('Price: ₹${plan.price.toStringAsFixed(2)}'),
+                  const SizedBox(height: 4),
+                  const Text('Includes:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ...plan.features.map((f) => Text('• $f')).toList(),
+                ],
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.edit, color: Colors.indigo),
+                onPressed: () => _showEditDialog(context, fullIndex, plan),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 
+  Color _getCardColor(String title) {
+    switch (title.toLowerCase()) {
+      case 'gold':
+        return const Color(0xFFFFD700);
+      case 'silver':
+        return const Color(0xFFC0C0C0);
+      case 'platinum':
+        return Colors.white;
+      default:
+        return Colors.grey.shade100;
+    }
+  }
+
+  void _showSearchDialog(BuildContext context) {
+    searchController.text = controller.searchQuery.value;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text("Search Plans"),
+        title: const Text("Search Plans"),
         content: TextField(
           controller: searchController,
           autofocus: true,
-          decoration: InputDecoration(hintText: "Search by title, duration, or feature"),
+          decoration: const InputDecoration(hintText: "Search by title, duration, or feature"),
           onChanged: controller.applySearch,
         ),
         actions: [
@@ -101,7 +137,7 @@ class AdminManagePlanScreen extends StatelessWidget {
               controller.applySearch(searchController.text);
               Get.back();
             },
-            child: Text("Search", style: TextStyle(color: AppColor.APP_Color_Indigo)),
+            child: const Text("Search", style: TextStyle(color: AppColor.APP_Color_Indigo)),
           ),
         ],
       ),
@@ -113,82 +149,125 @@ class AdminManagePlanScreen extends StatelessWidget {
     final durationController = TextEditingController();
     final priceController = TextEditingController();
     final featuresController = TextEditingController();
+    RxBool isActive = true.obs;
 
-    Get.defaultDialog(
-      title: 'Add New Plan',
-      content: SingleChildScrollView(
-        child: Column(
-          children: [
-            TextField(controller: titleController, decoration: InputDecoration(labelText: 'Plan Title')),
-            TextField(controller: durationController, decoration: InputDecoration(labelText: 'Duration')),
-            TextField(
-              controller: priceController,
-              decoration: InputDecoration(labelText: 'Price (₹)'),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: featuresController,
-              decoration: InputDecoration(labelText: 'Features (comma separated)'),
-              maxLines: 3,
-            ),
-          ],
+    showModalBottomSheet(
+      isScrollControlled: true,
+      context: context,
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          top: 20,
+          left: 16,
+          right: 16,
+        ),
+        child: SingleChildScrollView(
+          child: Obx(() => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text("Add New Plan", style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Plan Title')),
+              TextField(controller: durationController, decoration: const InputDecoration(labelText: 'Duration')),
+              TextField(controller: priceController, decoration: const InputDecoration(labelText: 'Price'), keyboardType: TextInputType.number),
+              TextField(controller: featuresController, decoration: const InputDecoration(labelText: 'Includes (comma-separated)'), maxLines: 3),
+              SwitchListTile(
+                value: isActive.value,
+                onChanged: (val) {
+                  isActive.value = val;
+                },
+                title: const Text("Mark as Active"),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () {
+                  final plan = GymPlan(
+                    id: DateTime.now().millisecondsSinceEpoch,
+                    title: titleController.text.trim(),
+                    duration: durationController.text.trim(),
+                    price: double.tryParse(priceController.text.trim()) ?? 0,
+                    features: featuresController.text.split(',').map((e) => e.trim()).toList(),
+                    isActive: isActive.value,
+                    action: isActive.value ? "Active" : "Inactive",
+                    createdDate: DateTime.now(),
+                  );
+                  controller.addPlan(plan);
+                  Get.back();
+                },
+                child: const Text("Add"),
+              ),
+              const SizedBox(height: 10),
+            ],
+          )),
         ),
       ),
-      textConfirm: 'Add',
-      textCancel: 'Cancel',
-      onConfirm: () {
-        final plan = GymPlan(
-          id: DateTime.now().millisecondsSinceEpoch,
-          title: titleController.text.trim(),
-          duration: durationController.text.trim(),
-          price: double.tryParse(priceController.text.trim()) ?? 0,
-          features: featuresController.text.split(',').map((e) => e.trim()).toList(),
-        );
-        controller.addPlan(plan);
-        Get.back();
-      },
     );
   }
 
-  void _showEditDialog(BuildContext context, AdminManagePlanController controller, int index, GymPlan plan) {
+  void _showEditDialog(BuildContext context, int index, GymPlan plan) {
     final titleController = TextEditingController(text: plan.title);
     final durationController = TextEditingController(text: plan.duration);
     final priceController = TextEditingController(text: plan.price.toString());
     final featuresController = TextEditingController(text: plan.features.join(', '));
+    RxBool isActive = (plan.action.toLowerCase() == "active").obs;
 
-    Get.defaultDialog(
-      title: 'Edit Plan',
-      content: SingleChildScrollView(
-        child: Column(
-          children: [
-            TextField(controller: titleController, decoration: InputDecoration(labelText: 'Plan Title')),
-            TextField(controller: durationController, decoration: InputDecoration(labelText: 'Duration')),
-            TextField(
-              controller: priceController,
-              decoration: InputDecoration(labelText: 'Price (₹)'),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: featuresController,
-              decoration: InputDecoration(labelText: 'Features (comma separated)'),
-              maxLines: 3,
-            ),
-          ],
+    showModalBottomSheet(
+      isScrollControlled: true,
+      context: context,
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          top: 20,
+          left: 16,
+          right: 16,
+        ),
+        child: SingleChildScrollView(
+          child: Obx(() => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text("Edit Plan", style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Plan Title')),
+              TextField(controller: durationController, decoration: const InputDecoration(labelText: 'Duration')),
+              TextField(controller: priceController, decoration: const InputDecoration(labelText: 'Price'), keyboardType: TextInputType.number),
+              TextField(controller: featuresController, decoration: const InputDecoration(labelText: 'Includes (comma-separated)'), maxLines: 3),
+              SwitchListTile(
+                value: isActive.value,
+                onChanged: (val) {
+                  isActive.value = val;
+                },
+                title: const Text("Mark as Active"),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () {
+                  final updatedPlan = GymPlan(
+                    id: plan.id,
+                    title: titleController.text.trim(),
+                    duration: durationController.text.trim(),
+                    price: double.tryParse(priceController.text.trim()) ?? plan.price,
+                    features: featuresController.text.split(',').map((e) => e.trim()).toList(),
+                    isActive: isActive.value,
+                    action: isActive.value ? "Active" : "Inactive",
+                    createdDate: plan.createdDate,
+                  );
+
+                  // Update the plan using the controller and ensure the tab is updated
+                  controller.editPlan(index, updatedPlan);
+
+                  // If the plan was made inactive, ensure it moves to the inactive tab
+                  if (!isActive.value) {
+                    controller.moveToInactive(updatedPlan);
+                  }
+                  Get.back();
+                },
+                child: const Text("Update"),
+              ),
+              const SizedBox(height: 10),
+            ],
+          )),
         ),
       ),
-      textConfirm: 'Update',
-      textCancel: 'Cancel',
-      onConfirm: () {
-        final updatedPlan = GymPlan(
-          id: plan.id,
-          title: titleController.text.trim(),
-          duration: durationController.text.trim(),
-          price: double.tryParse(priceController.text.trim()) ?? plan.price,
-          features: featuresController.text.split(',').map((e) => e.trim()).toList(),
-        );
-        controller.editPlan(index, updatedPlan);
-        Get.back();
-      },
     );
-  }
-}
+  }}
+

@@ -1,139 +1,143 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import '../controllers/admin_fee_payments_controller.dart';
 import '../utils/constants/color_constants.dart';
 
 class AdminFeePaymentsScreen extends StatelessWidget {
   final searchController = TextEditingController();
+  final controller = Get.find<AdminFeePaymentsController>();
+  final _storage = GetStorage(); // GetStorage instance
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<AdminFeePaymentsController>();
-
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text("Fee Payment Details", style: TextStyle(color: Colors.white)),
+        title: const Text("Fee Payment Detail's", style: TextStyle(color: Colors.white)),
         backgroundColor: AppColor.APP_Color_Indigo,
         leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Get.back()),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Get.back(),
+        ),
         actions: [
           IconButton(
-              icon: Icon(Icons.search, color: Colors.white),
-              onPressed: () => _showSearchDialog(context, controller)),
+            icon: const Icon(Icons.search, color: Colors.white),
+            onPressed: () => _showSearchDialog(context),
+          ),
         ],
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: Column(
-          children: [
-            Expanded(
-              child: Obx(() {
-                if (controller.filteredPayments.isEmpty) {
-                  return Center(child: Text("No fee records found."));
-                }
+        padding: const EdgeInsets.all(16),
+        child: Obx(() {
+          if (controller.filteredPayments.isEmpty) {
+            return const Center(child: Text("No fee records found."));
+          }
+          return ListView.builder(
+            itemCount: controller.filteredPayments.length,
+            itemBuilder: (context, index) {
+              final fee = controller.filteredPayments[index];
 
-                return ListView.builder(
-                  itemCount: controller.filteredPayments.length,
-                  itemBuilder: (context, index) {
-                    final fee = controller.filteredPayments[index];
-                    return Dismissible(
-                      key: Key(fee['user']),
-                      direction: DismissDirection.endToStart,
-                      background: Container(
-                        color: Colors.red,
-                        alignment: Alignment.centerRight,
-                        padding: EdgeInsets.only(right: 20),
-                        child: Icon(Icons.delete, color: Colors.white),
-                      ),
-                      onDismissed: (_) {
-                        controller.deletePayment(fee);
-                        Get.snackbar("Deleted", "Fee removed",
-                            backgroundColor: Colors.red, colorText: Colors.white);
-                      },
-                      child: Card(
-                        elevation: 5,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10.r)),
-                        child: ExpansionTile(
-                          title: Text(
-                            fee['user'],
-                            style: TextStyle(
-                                fontSize: 18.sp,
-                                fontWeight: FontWeight.bold,
-                                color: AppColor.APP_Color_Indigo),
-                          ),
-                          children: [
-                            ListTile(
-                              title: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _buildFeeRow("Total Fee", fee['totalFee']),
-                                  _buildFeeRow("Paid Amount", fee['paidAmount']),
-                                  _buildFeeRow("Discount", fee['discount']),
-                                  _buildFeeRow("Remaining", fee['remainingFee']),
-                                  _buildTextRow("Next Payment Date", fee['nextFeeDate']),
-                                  _buildTextRow("Package Expiry", fee['expiryDate']),
-                                ],
-                              ),
-                              trailing: IconButton(
-                                icon: Icon(Icons.edit, color: Colors.blue),
-                                onPressed: () =>
-                                    controller.openFeePaymentDialog(fee),
-                              ),
-                            ),
-                          ],
+              return Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                child: ExpansionTile(
+                  title: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        fee['Name'] ?? '',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColor.APP_Color_Indigo,
+                          fontSize: 16,
                         ),
                       ),
-                    );
-                  },
-                );
-              }),
-            ),
-            SizedBox(height: 10.h),
-            ElevatedButton.icon(
-              onPressed: controller.addNewPayment,
-              icon: Icon(Icons.add, color: Colors.white),
-              label:
-              Text("Add New Payment", style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 14.h),
-              ),
-            )
-          ],
-        ),
+                    ],
+                  ),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildFeeRow("Price", fee['Price']),
+                          _buildFeeRow("Discount", fee['Discount']),
+                          _buildFeeRow("Received Amount", fee['RecivedAmount']),
+                          _buildFeeRow("Balance Amount", fee['BalanceAmount']),
+                          _buildTextRow("Next Payment Date", controller.formatDate(fee['NextPaymentDate'])),
+                          _buildTextRow("Package Expiry", controller.formatDate(fee['CreateDate'])),
+                          // Moved Joining Date to the bottom in red
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: Text(
+                              "Joining Date: ${controller.formatDate(fee['CreateDate'])}",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red,
+                              ),
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () => controller.openFeePaymentDialog(fee),
+                            ),
+                          ),
+                          // Pay Now Button (Green) - Now with navigation
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                              icon: const Icon(Icons.arrow_forward, color: Colors.white),
+                              label: const Text("Pay Now", style: TextStyle(color: Colors.white)),
+                              onPressed: () {
+                                // Navigate to the QR Payment screen
+                                Get.toNamed('/admin-qr-payment');
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        }),
       ),
     );
   }
 
+  // Helper function to build the fee rows
   Widget _buildFeeRow(String label, dynamic value) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 6.h),
-      child: Text("$label: ₹${value.toString()}"),
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text("$label: ₹${(value ?? 0).toString()}"),
     );
   }
 
-  Widget _buildTextRow(String label, String value) {
+  // Helper function to build the text rows
+  Widget _buildTextRow(String label, dynamic value) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 6.h),
-      child: Text("$label: $value"),
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text("$label: ${value ?? '-'}"),
     );
   }
 
-  void _showSearchDialog(
-      BuildContext context, AdminFeePaymentsController controller) {
+  // Show search dialog
+  void _showSearchDialog(BuildContext context) {
     searchController.text = controller.searchQuery.value;
-
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text("Search Payment User"),
+        title: const Text("Search Payment User"),
         content: TextField(
           controller: searchController,
           autofocus: true,
-          decoration: InputDecoration(hintText: "Enter user name"),
+          decoration: const InputDecoration(hintText: "Enter user name"),
           onChanged: controller.applySearch,
         ),
         actions: [

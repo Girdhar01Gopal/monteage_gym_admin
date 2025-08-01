@@ -1,44 +1,46 @@
+import 'dart:io';
 import 'package:get/get.dart';
-import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:open_file/open_file.dart';
+import 'package:path_provider/path_provider.dart';
 
 class AdminDietMenuController extends GetxController {
-  // Observable list of diet menu items categorized by Veg and Non-Veg
-  var dietMenuList = {
-    'Veg': <Map<String, dynamic>>[].obs,
-    'Non-Veg': <Map<String, dynamic>>[].obs,
-  };
-
-  // Observable for tracking whether the form for adding a new item is visible
-  var isAdding = false.obs;
+  var pdfFiles = <File>[].obs;
 
   @override
   void onInit() {
     super.onInit();
-    // Simulate initial fetch of da
-    fetchDietMenu();
+    loadPdfFiles();
   }
 
-  // Simulate fetching diet menu data (Replace with actual API call)
-  void fetchDietMenu() async {
-    await Future.delayed(Duration(seconds: 1)); // Simulate network delay
-
-    dietMenuList['Veg']?.addAll([
-      {'name': 'Roti', 'description': 'Delicious Roti', 'nutrition': '250 Cal', 'image': 'image_path'},
-    ]);
-    dietMenuList['Non-Veg']?.addAll([
-      {'name': 'Egg', 'description': 'Delicious Egg', 'nutrition': '300 Cal', 'image': 'image_path'},
-    ]);
+  Future<void> loadPdfFiles() async {
+    final dir = await getApplicationDocumentsDirectory();
+    final pdfDir = Directory('${dir.path}/diet_pdfs');
+    if (await pdfDir.exists()) {
+      final files = pdfDir.listSync().whereType<File>().where((f) => f.path.endsWith('.pdf')).toList();
+      pdfFiles.assignAll(files);
+    } else {
+      await pdfDir.create(recursive: true);
+    }
   }
 
-  // Add a new diet menu item
-  void addDietMenuItem(Map<String, dynamic> newItem, String category) {
-    dietMenuList[category]?.add(newItem);
-    Get.snackbar("Success", "$category Item added successfully", backgroundColor: Colors.green, colorText: Colors.white);
+  Future<void> uploadPdf() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
+    if (result != null && result.files.single.path != null) {
+      final file = File(result.files.single.path!);
+      final dir = await getApplicationDocumentsDirectory();
+      final savePath = '${dir.path}/diet_pdfs/${result.files.single.name}';
+      await file.copy(savePath);
+      loadPdfFiles();
+    }
   }
 
-  // Delete a diet menu item
-  void deleteDietMenuItem(int index, String category) {
-    dietMenuList[category]?.removeAt(index);
-    Get.snackbar("Success", "$category Item deleted successfully", backgroundColor: Colors.red, colorText: Colors.white);
+  Future<void> openPdf(File file) async {
+    await OpenFile.open(file.path);
+  }
+
+  Future<void> deletePdf(File file) async {
+    await file.delete();
+    loadPdfFiles();
   }
 }

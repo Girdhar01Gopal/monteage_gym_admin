@@ -12,6 +12,7 @@ class AdminPanelSettingsScreen extends StatelessWidget {
     final controller = Get.put(AdminSettingsController());
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: AppColor.APP_Color_Indigo,
         leading: IconButton(
@@ -37,7 +38,7 @@ class AdminPanelSettingsScreen extends StatelessWidget {
                     radius: 45.r,
                     backgroundImage: controller.profileImage.value != null
                         ? FileImage(controller.profileImage.value!)
-                        : AssetImage("assets/images/person.png") as ImageProvider,
+                        : AssetImage("assets/images/logo.jpeg") as ImageProvider,
                     backgroundColor: Colors.grey.shade200,
                   )),
                   InkWell(

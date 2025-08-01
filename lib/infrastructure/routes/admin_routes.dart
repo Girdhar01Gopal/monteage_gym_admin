@@ -1,42 +1,40 @@
 import 'package:get/get.dart';
 
-// Controllers are handled via bindings
+// Bindings
 import '../../bindings/add_course_binding.dart';
 import '../../bindings/add_member_binding.dart';
-
 import '../../bindings/admin_active_users_binding.dart';
 import '../../bindings/admin_add_user_binding.dart';
-
 import '../../bindings/admin_daily_collection_binding.dart';
 import '../../bindings/admin_dashboard_binding.dart';
 import '../../bindings/admin_details_binding.dart';
 import '../../bindings/admin_diet_menu_binding.dart';
 import '../../bindings/admin_fee_payments_binding.dart';
 import '../../bindings/admin_gym_pass_binding.dart';
-
 import '../../bindings/admin_manage_plan_binding.dart';
 import '../../bindings/admin_notification_binding.dart';
 import '../../bindings/admin_plan_management_binding.dart';
-
-// Controllers
+import '../../bindings/admin_qr_payment_binding.dart'; // ✅ NEW
 import '../../bindings/admin_reports_binding.dart';
 import '../../bindings/admin_user_list_binding.dart';
+import '../../bindings/assigned_trainer_binding.dart';
 import '../../bindings/feesummarybindind.dart';
-import '../../controllers/admin_add_trainer_controller.dart';
 
+// Controllers
+import '../../bindings/gym_profile_binding.dart';
+import '../../controllers/admin_add_trainer_controller.dart';
 import '../../controllers/admin_login_controller.dart';
 import '../../controllers/admin_settings_controller.dart';
+import '../../controllers/admin_trainer_list_controller.dart';
 
 // Screens
-import '../../controllers/admin_trainer_list_controller.dart';
+import '../../controllers/assigned_trainer_controller.dart';
 import '../../screens/AdminFeeSummaryScreen.dart';
 import '../../screens/add_course_screen.dart';
-
 import '../../screens/add_member_screen.dart';
 import '../../screens/add_trainer_screen.dart';
 import '../../screens/admin_active_users_screen.dart';
 import '../../screens/admin_add_user_screen.dart';
-
 import '../../screens/admin_daily_collection_screen.dart';
 import '../../screens/admin_diet_menu_screen.dart';
 import '../../screens/admin_fee_payments_screen.dart';
@@ -53,7 +51,8 @@ import '../../screens/admin_details_screen.dart';
 import '../../screens/admin_gym_pass_screen.dart';
 import '../../screens/admin_trainer_list_screen.dart';
 import '../../screens/admin_user_list_screen.dart';
-
+import '../../screens/assigned_trainer_screen.dart';
+import '../../screens/gym_profile_screen.dart';
 
 class AdminRoutes {
   static const ADMIN_SPLASH = '/admin/splash';
@@ -66,7 +65,7 @@ class AdminRoutes {
   static const ADMIN_SETTINGS = '/admin/settings';
   static const ADMIN_MANAGE_PLAN = '/admin/manage-plan';
   static const ADMIN_SUBSCRIPTION_PLAN = '/admin/subscription-plan';
-  static const ADMIN_USER_LIST = '/admin-user-list'; // User List Route
+  static const ADMIN_USER_LIST = '/admin-user-list';
   static const ADMIN_ACTIVE_USERS = '/admin/active-users';
   static const ADD_MEMBER_SCREEN = '/admin/add_member';
   static const ADMIN_FEE_SUMMARY = '/admin_fee_summary';
@@ -84,6 +83,8 @@ class AdminRoutes {
   static const ADMIN_QR_PAYMENT = '/admin-qr-payment';
   static const ADMIN_NOTIFICATIONS = '/admin-notifications';
   static const MANAGE_ACCESS_SCREEN = '/manage-access';
+  static const GYM_PROFILE = '/gym-profile';
+  static const ASSIGNED_TRAINER = '/assigned-trainer';
 
 
   static List<GetPage> routes = [
@@ -92,36 +93,26 @@ class AdminRoutes {
       page: () => AdminSplashScreen(),
     ),
     GetPage(
-      name: AdminRoutes.ADMIN_FEE_SUMMARY,
-      page: () => AdminFeeSummaryScreen(),
-      binding: Feesummarybindind(), // Bind AdminFeeSummaryController
+      name: ASSIGNED_TRAINER,
+      page: () => AssignedTrainerScreen(),
+      binding: AssignedTrainerBinding(),
     ),
     GetPage(
-      name: AdminRoutes.ADMIN_QR_PAYMENT,
-      page: () => AdminQrPaymentScreen(),
+      name: GYM_PROFILE,
+      page: () => GymProfileScreen(),
+      binding: GymProfileBinding(),
     ),
     GetPage(
-      name: AdminRoutes.ADMIN_NOTIFICATIONS,
-      page: () => AdminNotificationsScreen(),
-      binding: AdminNotificationBinding(),
-    ),
-    GetPage(
-      name: AdminRoutes.ADMIN_LOGIN,
+      name: ADMIN_LOGIN,
       page: () => AdminLoginScreen(),
       binding: BindingsBuilder(() {
         Get.lazyPut(() => AdminLoginController());
       }),
     ),
-
     GetPage(
       name: ADMIN_DASHBOARD,
       page: () => AdminDashboardScreen(),
       binding: AdminDashboardBinding(),
-    ),
-    GetPage(
-      name: DAILY_COLLECTION,
-      page: () => AdminDailyCollectionScreen(),
-      binding: AdminDailyCollectionBinding(),
     ),
     GetPage(
       name: ADMIN_DETAILS,
@@ -131,7 +122,7 @@ class AdminRoutes {
     GetPage(
       name: ADD_MEMBER_SCREEN,
       page: () => AddMemberScreen(),
-      binding: AddMemberBinding(), // Add the binding here
+      binding: AddMemberBinding(),
     ),
     GetPage(
       name: ADMIN_GYM_PASS,
@@ -139,36 +130,36 @@ class AdminRoutes {
       binding: AdminGymPassBinding(),
     ),
     GetPage(
-      name: AdminRoutes.ADMIN_SETTINGS,
+      name: ADMIN_SETTINGS,
       page: () => AdminPanelSettingsScreen(),
       binding: BindingsBuilder(() {
         Get.lazyPut(() => AdminSettingsController());
       }),
     ),
     GetPage(
-      name: AdminRoutes.ADMIN_MANAGE_PLAN,
+      name: ADMIN_MANAGE_PLAN,
       page: () => AdminManagePlanScreen(),
       binding: AdminManagePlanBinding(),
     ),
     GetPage(
-      name: AdminRoutes.ADMIN_USER_LIST,
+      name: ADMIN_USER_LIST,
       page: () => AdminUserListScreen(),
       binding: AdminUserListBinding(),
     ),
     GetPage(
-      name: AdminRoutes.ADMIN_ACTIVE_USERS,
+      name: ADMIN_ACTIVE_USERS,
       page: () => AdminActiveUsersScreen(),
       binding: AdminActiveUsersBinding(),
     ),
     GetPage(
-      name: AdminRoutes.ADD_TRAINER_SCREEN,
+      name: ADD_TRAINER_SCREEN,
       page: () => AddTrainerScreen(),
       binding: BindingsBuilder(() {
         Get.lazyPut(() => AdminAddTrainerController());
       }),
     ),
     GetPage(
-      name: AdminRoutes.ADMIN_TRAINER_LIST,
+      name: ADMIN_TRAINER_LIST,
       page: () => AdminTrainerListScreen(),
       binding: BindingsBuilder(() {
         Get.lazyPut(() => AdminTrainerListController());
@@ -180,7 +171,7 @@ class AdminRoutes {
       binding: AddCourseBinding(),
     ),
     GetPage(
-      name: AdminRoutes.ADMIN_SUBSCRIPTION_PLAN,
+      name: ADMIN_SUBSCRIPTION_PLAN,
       page: () => SubsciptionPlanScreen(),
       binding: AdminPlanManagementBinding(),
     ),
@@ -192,19 +183,37 @@ class AdminRoutes {
     GetPage(
       name: ADMIN_FEE_PAYMENTS,
       page: () => AdminFeePaymentsScreen(),
-      binding: AdminFeePaymentsBinding(), // Bind AdminFeePaymentsController
+      binding: AdminFeePaymentsBinding(),
     ),
     GetPage(
       name: ADMIN_REPORTS,
       page: () => AdminReportsScreen(),
       binding: AdminReportsBinding(),
     ),
-    // Diet Menu Routes
     GetPage(
-      name: AdminRoutes.ADMIN_DIET_MENU,
+      name: DAILY_COLLECTION,
+      page: () => AdminDailyCollectionScreen(),
+      binding: AdminDailyCollectionBinding(),
+    ),
+    GetPage(
+      name: ADMIN_FEE_SUMMARY,
+      page: () => AdminFeeSummaryScreen(),
+      binding: Feesummarybindind(),
+    ),
+    GetPage(
+      name: ADMIN_NOTIFICATIONS,
+      page: () => AdminNotificationsScreen(),
+      binding: AdminNotificationBinding(),
+    ),
+    GetPage(
+      name: ADMIN_DIET_MENU,
       page: () => AdminDietMenuScreen(),
       binding: AdminDietMenuBinding(),
     ),
-
+    GetPage(
+      name: ADMIN_QR_PAYMENT,
+      page: () => AdminQrPaymentScreen(),
+      binding: AdminQrPaymentBinding(),
+    ),
   ];
 }

@@ -1,75 +1,80 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../controllers/admin_daily_collection_controller.dart';
 import '../utils/constants/color_constants.dart';
 
 class AdminDailyCollectionScreen extends StatelessWidget {
+  final controller = Get.find<AdminDailyCollectionController>();
+  final searchText = ''.obs;
+
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<AdminDailyCollectionController>();
-
     return DefaultTabController(
       length: 2,
       child: Scaffold(
+        backgroundColor: Colors.white,
         appBar: AppBar(
-          title: Text("View Collection's", style: TextStyle(color: Colors.white)),
+          title: const Text("View Collection's", style: TextStyle(color: Colors.white)),
           backgroundColor: AppColor.APP_Color_Indigo,
           leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.white),
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Get.back(),
           ),
-          bottom: TabBar(
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            indicatorColor: AppColor.APP_Color_Pink,
-            tabs: [
-              Tab(text: "Today's Collection"),
-              Tab(text: "Monthly Collection"),
-            ],
-          ),
-        ),
-        body: SafeArea(
-          child: Padding(
-            padding: EdgeInsets.all(16.w),
-            child: TabBarView(
-              children: [
-                _buildCollectionTab(
-                  controller: controller,
-                  isToday: true,
-                ),
-                _buildCollectionTab(
-                  controller: controller,
-                  isToday: false,
-                ),
-              ],
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.search, color: Colors.white),
+              onPressed: () {
+                _showSearchDialog(context);
+              },
+            )
+          ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(kToolbarHeight),
+            child: Container(
+              color: Colors.white,
+              child: const TabBar(
+                labelColor: Colors.black,
+                unselectedLabelColor: Colors.grey,
+                indicatorColor: Colors.indigo,
+                labelStyle: TextStyle(fontWeight: FontWeight.bold),
+                indicatorWeight: 3,
+                tabs: [
+                  Tab(text: "Today's Collection"),
+                  Tab(text: "Monthly Collection"),
+                ],
+              ),
             ),
           ),
+        ),
+        body: TabBarView(
+          children: [
+            _buildCollectionTab(isToday: true),
+            _buildCollectionTab(isToday: false),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildCollectionTab({
-    required AdminDailyCollectionController controller,
-    required bool isToday,
-  }) {
-    return Column(
-      children: [
-        Expanded(
-          child: Obx(() {
-            final collection = isToday ? controller.todayCollection : controller.monthlyCollection;
+  Widget _buildCollectionTab({required bool isToday}) {
+    return Obx(() {
+      final allData = isToday ? controller.todayCollection : controller.monthlyCollection;
+      final filtered = searchText.value.isEmpty
+          ? allData
+          : allData.where((item) =>
+          item['Name'].toString().toLowerCase().contains(searchText.value.toLowerCase())).toList();
 
-            if (collection.isEmpty) {
-              return Center(child: CircularProgressIndicator());
-            }
-
-            return ListView.builder(
-              itemCount: collection.length,
+      return Column(
+        children: [
+          Expanded(
+            child: allData.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : ListView.builder(
+              itemCount: filtered.length,
               itemBuilder: (context, index) {
-                final data = collection[index];
+                final data = filtered[index];
                 return Dismissible(
-                  key: Key(data['name']),
+                  key: Key(data['Name']),
                   direction: DismissDirection.endToStart,
                   onDismissed: (_) => isToday
                       ? controller.deleteDailyCollection(data)
@@ -77,58 +82,87 @@ class AdminDailyCollectionScreen extends StatelessWidget {
                   background: Container(
                     color: Colors.red,
                     alignment: Alignment.centerRight,
-                    padding: EdgeInsets.symmetric(horizontal: 20),
-                    child: Icon(Icons.delete, color: Colors.white),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: const Icon(Icons.delete, color: Colors.white),
                   ),
                   child: Card(
-                    elevation: 5,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+                    elevation: 4,
+                    margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                     child: ListTile(
-                      title: Text(data['name'], style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: AppColor.APP_Color_Indigo)),
+                      title: Text(data['Name'],
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColor.APP_Color_Indigo)),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Attendance: ${data['attendance'] ? 'Present' : 'Absent'}"),
-                          Text("Payment: ₹${data['paymentReceived']}"),
-                          Text("Progress: ${data['progress']}"),
-                          Text("Date: ${data['date']}"),
+                          Text("Payment Received: ₹${data['RecivedAmount']}"),
+                          Text("Payment Remaining: ₹${data['BalanceAmount']}"),
+                          Text("Next Payment Date: ${data['NextPaymentDate']}"),
+                          Text("Paid On: ${data['PaymentDate']}"),
+                          Text("Progress: ${data['PaymentStatus']}"),
                         ],
                       ),
                       trailing: IconButton(
-                        icon: Icon(Icons.edit),
-                        onPressed: () => controller.openEditDialog(data),
+                        icon: const Icon(Icons.edit, color: Colors.indigo),
+                        onPressed: () => controller.openEditDialog(data, isToday),
                       ),
                     ),
                   ),
                 );
               },
+            ),
+          ),
+          Obx(() {
+            final total = isToday
+                ? controller.todayTotal.value
+                : controller.monthlyTotal.value;
+            return Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text(
+                "Total ${isToday ? "Today's" : "Monthly"} Collection: ₹${total.toStringAsFixed(2)}",
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                ),
+              ),
             );
           }),
+          const SizedBox(height: 12),
+        ],
+      );
+    });
+  }
+
+  void _showSearchDialog(BuildContext context) {
+    final tempController = TextEditingController(text: searchText.value);
+
+    Get.dialog(
+      AlertDialog(
+        title: const Text("Search by Name"),
+        content: TextField(
+          controller: tempController,
+          decoration: const InputDecoration(hintText: "Enter name"),
         ),
-        Obx(() {
-          final total = isToday ? controller.todayTotal.value : controller.monthlyTotal.value;
-          return Padding(
-            padding: EdgeInsets.only(top: 10.h),
-            child: Text(
-              "Total ${isToday ? "Today's" : "Monthly"} Collection: ₹${total.toStringAsFixed(2)}",
-              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, color: Colors.green),
-            ),
-          );
-        }),
-        SizedBox(height: 10.h),
-        ElevatedButton(
-          onPressed: () {
-            Get.snackbar(
-              "Add New Collection",
-              "New ${isToday ? "daily" : "monthly"} collection added",
-              backgroundColor: Colors.green,
-              colorText: Colors.white,
-            );
-          },
-          child: Text("Add New ${isToday ? "Daily" : "Monthly"} Collection", style: TextStyle(color: Colors.white)),
-          style: ElevatedButton.styleFrom(backgroundColor: AppColor.APP_Color_Indigo),
-        ),
-      ],
+        actions: [
+          TextButton(
+            onPressed: () {
+              searchText.value = tempController.text;
+              Get.back();
+            },
+            child: const Text("Search"),
+          ),
+          TextButton(
+            onPressed: () {
+              searchText.value = '';
+              tempController.clear();
+              Get.back();
+            },
+            child: const Text("Clear"),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,36 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 class AdminReportsController extends GetxController {
   final users = <UserReport>[].obs;
   final selectedUserType = 'All'.obs;
-  final Rx<DateTimeRange?> dateRange = Rx<DateTimeRange?>(null);
   final searchText = ''.obs;
   final searchController = TextEditingController();
-
-  String get dateRangeStr => dateRange.value == null
-      ? ''
-      : '${DateFormat.yMd().format(dateRange.value!.start)} - ${DateFormat.yMd().format(dateRange.value!.end)}';
 
   List<UserReport> get filteredUsers {
     return users.where((u) {
       final inType = selectedUserType.value == 'All' || u.type == selectedUserType.value;
-      final inDate = dateRange.value == null ||
-          (!u.activity.lastSession.isBefore(dateRange.value!.start) &&
-              !u.activity.lastSession.isAfter(dateRange.value!.end));
       final query = searchText.value.toLowerCase();
       final matchesSearch = u.name.toLowerCase().contains(query) || u.type.toLowerCase().contains(query);
-      return inType && inDate && matchesSearch;
+      return inType && matchesSearch;
     }).toList();
   }
 
   void setUserType(String? t) => selectedUserType.value = t ?? 'All';
-
-  void setDateRange(DateTimeRange dr) => dateRange.value = dr;
-
   void updateSearch(String query) => searchText.value = query;
 
   @override
@@ -41,19 +29,33 @@ class AdminReportsController extends GetxController {
 
   void _loadSampleUsers() {
     users.addAll([
-      UserReport('U001', 'Amit Sharma', 'Member',
-        UserActivity(20, 35, 88, DateTime.now().subtract(Duration(days: 2))),
-        UserFinancial(15000.0, 5000.0),
-        UserFeePayment(10000.0, 2000.0),
+      UserReport(
+        id: 'U001',
+        name: 'Amit Sharma',
+        type: 'Member',
+        email: 'amit@example.com',
+        phone: '9876543210',
+        address: 'Delhi, India',
+        fatherName: 'Rajesh Sharma',
+        plan: 'Gold Plan',
+        totalPayment: 12000,
+        duePayment: 2000,
+        discount: 1000,
       ),
-      UserReport('U002', 'Priya Verma', 'Trainer',
-        UserActivity(18, 29, 75, DateTime.now().subtract(Duration(days: 5))),
-        UserFinancial(18000.0, 3000.0),
-        UserFeePayment(15000.0, 1000.0),
+      UserReport(
+        id: 'U002',
+        name: 'Priya Verma',
+        type: 'Trainer',
+        email: 'priya@example.com',
+        phone: '9012345678',
+        address: 'Mumbai, India',
+        fatherName: 'Suresh Verma',
+        plan: 'Platinum Plan',
+        totalPayment: 18000,
+        duePayment: 1500,
+        discount: 2000,
       ),
-    ]
-    );
-
+    ]);
   }
 
   void exportUserReportPDF(UserReport u) async {
@@ -63,14 +65,14 @@ class AdminReportsController extends GetxController {
         pw.Text('Report for ${u.name}', style: pw.TextStyle(fontSize: 22)),
         pw.SizedBox(height: 10),
         pw.Text('User Type: ${u.type}'),
-        pw.Text('Sessions: ${u.activity.sessions}'),
-        pw.Text('Activity Score: ${u.activity.activityScore}%'),
-        pw.Text('Last Session: ${DateFormat.yMMMd().format(u.activity.lastSession)}'),
-        pw.SizedBox(height: 10),
-        pw.Text('Revenue: ₹${u.financial.revenue}'),
-        pw.Text('Expenses: ₹${u.financial.expenses}'),
-        pw.Text('Fee Paid: ₹${u.feePayment.paid}'),
-        pw.Text('Fee Due: ₹${u.feePayment.due}'),
+        pw.Text('Email: ${u.email}'),
+        pw.Text('Phone: ${u.phone}'),
+        pw.Text('Address: ${u.address}'),
+        pw.Text('Father Name: ${u.fatherName}'),
+        pw.Text('Plan: ${u.plan}'),
+        pw.Text('Total Payment: ₹${u.totalPayment}'),
+        pw.Text('Due Payment: ₹${u.duePayment}'),
+        pw.Text('Discount: ₹${u.discount}'),
       ]),
     ));
 
@@ -78,31 +80,21 @@ class AdminReportsController extends GetxController {
   }
 }
 
-
 class UserReport {
-  final String id, name, type;
-  final UserActivity activity;
-  final UserFinancial financial;
-  final UserFeePayment feePayment;
+  final String id, name, type, email, phone, address, fatherName, plan;
+  final double totalPayment, duePayment, discount;
 
-  UserReport(this.id, this.name, this.type, this.activity, this.financial, this.feePayment);
-}
-
-class UserActivity {
-  final int logins, sessions, activityScore;
-  final DateTime lastSession;
-
-  UserActivity(this.logins, this.sessions, this.activityScore, this.lastSession);
-}
-
-class UserFinancial {
-  final double revenue, expenses;
-
-  UserFinancial(this.revenue, this.expenses);
-}
-
-class UserFeePayment {
-  final double paid, due;
-
-  UserFeePayment(this.paid, this.due);
+  UserReport({
+    required this.id,
+    required this.name,
+    required this.type,
+    required this.email,
+    required this.phone,
+    required this.address,
+    required this.fatherName,
+    required this.plan,
+    required this.totalPayment,
+    required this.duePayment,
+    required this.discount,
+  });
 }

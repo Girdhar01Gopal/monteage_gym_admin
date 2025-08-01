@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import '../controllers/admin_reports_controller.dart';
 import '../utils/constants/color_constants.dart';
 import '../utils/custom_text.dart';
 
 class AdminReportsScreen extends StatelessWidget {
-  final dateFormat = DateFormat('yyyy-MM-dd');
-
   @override
   Widget build(BuildContext context) {
     final ctrl = Get.find<AdminReportsController>();
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text("Admin Report's", style: TextStyle(color: Colors.white)),
         backgroundColor: AppColor.APP_Color_Indigo,
@@ -24,7 +22,6 @@ class AdminReportsScreen extends StatelessWidget {
       body: Padding(
         padding: EdgeInsets.all(20.w),
         child: Column(children: [
-          // Search Field
           TextField(
             controller: ctrl.searchController,
             onChanged: ctrl.updateSearch,
@@ -35,22 +32,8 @@ class AdminReportsScreen extends StatelessWidget {
             ),
           ),
           SizedBox(height: 10.h),
-
-          // Filters
           Row(
             children: [
-              Expanded(
-                child: Obx(() => TextButton(
-                  onPressed: () => _selectDateRange(context, ctrl),
-                  child: Text(
-                    ctrl.dateRangeStr.isEmpty
-                        ? 'Select Date Range'
-                        : ctrl.dateRangeStr,
-                    style: TextStyle(fontSize: 16.sp),
-                  ),
-                )),
-              ),
-              SizedBox(width: 10.w),
               Expanded(
                 child: Obx(() => DropdownButton<String>(
                   value: ctrl.selectedUserType.value,
@@ -60,10 +43,9 @@ class AdminReportsScreen extends StatelessWidget {
                       .toList(),
                   onChanged: ctrl.setUserType,
                 )),
-              )
+              ),
             ],
           ),
-
           SizedBox(height: 10.h),
           CustomText(
             data: "User's Reports",
@@ -72,8 +54,6 @@ class AdminReportsScreen extends StatelessWidget {
             color: AppColor.APP_Color_Indigo,
           ),
           SizedBox(height: 10.h),
-
-          // Report Cards
           Expanded(child: Obx(() {
             if (ctrl.filteredUsers.isEmpty) {
               return Center(child: Text("No data available."));
@@ -102,12 +82,14 @@ class AdminReportsScreen extends StatelessWidget {
                           ),
                         ),
                         SizedBox(height: 8.h),
-                        Text("Sessions: ${ux.activity.sessions}"),
-                        Text("Activity Score: ${ux.activity.activityScore}%"),
-                        Text("Last Session: ${DateFormat.yMMMd().format(ux.activity.lastSession)}"),
-                        SizedBox(height: 6.h),
-                        Text("Financial: ₹${ux.financial.revenue} in, ₹${ux.financial.expenses} out"),
-                        Text("Fee Paid: ₹${ux.feePayment.paid}, Due: ₹${ux.feePayment.due}"),
+                        Text("Father Name: ${ux.fatherName}"),
+                        Text("Email: ${ux.email}"),
+                        Text("Phone: ${ux.phone}"),
+                        Text("Address: ${ux.address}"),
+                        Text("Plan: ${ux.plan}"),
+                        Text("Total Payment: ₹${ux.totalPayment}"),
+                        Text("Due Payment: ₹${ux.duePayment}"),
+                        Text("Discount: ₹${ux.discount}"),
                         SizedBox(height: 10.h),
                         Align(
                           alignment: Alignment.centerRight,
@@ -130,16 +112,5 @@ class AdminReportsScreen extends StatelessWidget {
         ]),
       ),
     );
-  }
-
-  void _selectDateRange(BuildContext ctx, AdminReportsController ctrl) async {
-    final range = await showDateRangePicker(
-      context: ctx,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-    );
-    if (range != null) {
-      ctrl.setDateRange(range);
-    }
   }
 }

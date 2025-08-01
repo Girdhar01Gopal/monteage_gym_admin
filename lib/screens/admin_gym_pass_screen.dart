@@ -37,18 +37,6 @@ class AdminGymPassScreen extends GetView<AdminGymPassController> {
                       margin: EdgeInsets.only(top: 60.h, left: 20.w),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        // boxShadow: [
-                        //   BoxShadow(
-                        //     offset: Offset(0, 1),
-                        //     blurRadius: 5.r,
-                        //     color: AppColor.White,
-                        //   ),
-                        //   BoxShadow(
-                        //     offset: Offset(0, -1),
-                        //     blurRadius: 5.r,
-                        //     color: AppColor.White,
-                        //   )
-                        // ],
                         color: controller.id.value == "PLATINUM"
                             ? AppColor.Platinum_1
                             : controller.id.value == "GOLD"

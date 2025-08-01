@@ -22,7 +22,7 @@ class AdminLoginScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(height: 20.h),
-              Image.asset(ImageConstatnts.LOGO, height: 70.h),
+              Image.asset(ImageConstatnts.LOGO1, height: 70.h),
               SizedBox(height: 20.h),
 
               /// Welcome Text
@@ -35,7 +35,7 @@ class AdminLoginScreen extends StatelessWidget {
                 ),
               ),
               AutoSizeText(
-                "Hello there, sign in to continue!",
+                "Hello there, login in to continue!",
                 style: GoogleFonts.aBeeZee(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.w500,
@@ -46,29 +46,43 @@ class AdminLoginScreen extends StatelessWidget {
 
               /// Email Field
               CustomText(
-                  data: "Your Login Id",
-                  fontWeight: FontWeight.w500,
-                  fontSize: 18.sp),
-              Container(
-                decoration: BoxDecoration(
+                data: "Your Login Id",
+                fontWeight: FontWeight.w500,
+                fontSize: 18.sp,
+              ),
+              TextFormField(
+                controller: controller.emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  hintText: "Enter your Login Id",
+                  suffixIcon: Icon(Icons.email),
+                  filled: true,
+                  fillColor: AppColor.grey_100,
+                  contentPadding: EdgeInsets.symmetric(
+                    vertical: 15.h,
+                    horizontal: 12.w,
+                  ),
+                  border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10.r),
-                    color: AppColor.grey_100),
-                child: TextFormField(
-                  controller: controller.emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                      border: InputBorder.none,
-                      hintText: "Enter your Login Id",
-                      suffixIcon: Icon(Icons.email)),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
-                    } else if (!GetUtils.isEmail(value)) {
-                      return 'Please enter a valid email';
-                    }
-                    return null;
-                  },
+                    borderSide: BorderSide(color: AppColor.grey_100),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10.r),
+                    borderSide: BorderSide(color: AppColor.grey_100),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10.r),
+                    borderSide: BorderSide(color: AppColor.APP_Color_Indigo),
+                  ),
                 ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your email';
+                  } else if (!GetUtils.isEmail(value)) {
+                    return 'Please enter a valid email';
+                  }
+                  return null;
+                },
               ),
               SizedBox(height: 20.h),
 
@@ -78,17 +92,30 @@ class AdminLoginScreen extends StatelessWidget {
                 fontWeight: FontWeight.w500,
                 fontSize: 18.sp,
               ),
-              Obx(() => Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10.r),
-                  color: AppColor.grey_100,
-                ),
-                child: TextFormField(
+              Obx(
+                    () => TextFormField(
                   controller: controller.passwordController,
                   obscureText: controller.obscurePassword.value,
                   decoration: InputDecoration(
-                    border: InputBorder.none,
                     hintText: "Enter your Password",
+                    filled: true,
+                    fillColor: AppColor.grey_100,
+                    contentPadding: EdgeInsets.symmetric(
+                      vertical: 15.h,
+                      horizontal: 12.w,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.r),
+                      borderSide: BorderSide(color: AppColor.grey_100),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.r),
+                      borderSide: BorderSide(color: AppColor.grey_100),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.r),
+                      borderSide: BorderSide(color: AppColor.APP_Color_Indigo),
+                    ),
                     suffixIcon: IconButton(
                       icon: Icon(
                         controller.obscurePassword.value
@@ -105,20 +132,23 @@ class AdminLoginScreen extends StatelessWidget {
                     return null;
                   },
                 ),
-              )),
-
+              ),
               SizedBox(height: 50.h),
 
               /// Login Button
-              Obx(() {
-                return InkWell(
+              Obx(
+                    () => InkWell(
                   onTap: controller.isLoading.value
-                      ? null // Disable button if loading
+                      ? null
                       : () {
                     if (controller.emailController.text.isEmpty ||
                         controller.passwordController.text.isEmpty) {
-                      Get.snackbar("Error", "Please Fill The Credentials",
-                          backgroundColor: Colors.red, colorText: Colors.white);
+                      Get.snackbar(
+                        "Error",
+                        "Please Fill The Credentials",
+                        backgroundColor: Colors.red,
+                        colorText: Colors.white,
+                      );
                     } else {
                       controller.login(
                         controller.emailController.text,
@@ -140,9 +170,7 @@ class AdminLoginScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10.r),
                     ),
                     child: controller.isLoading.value
-                        ? CircularProgressIndicator(
-                      color: Colors.white,
-                    )
+                        ? CircularProgressIndicator(color: Colors.white)
                         : AutoSizeText(
                       "Login",
                       style: GoogleFonts.aBeeZee(
@@ -152,8 +180,8 @@ class AdminLoginScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                );
-              }),
+                ),
+              ),
               SizedBox(height: 30.h),
             ],
           ),
