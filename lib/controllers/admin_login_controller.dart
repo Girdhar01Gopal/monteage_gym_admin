@@ -36,10 +36,10 @@ class AdminLoginController extends GetxController {
         if (data['statuscode'] == 200) {
           final gymId = data['data']['GymeId'];
 
-          // ✅ Save to local cache
+
           box.write('isLoggedIn', true);
           box.write('adminEmail', email);
-          box.write('gymId', gymId); // Save GymeId to cache
+          box.write('gymId', gymId);
 
           Get.snackbar("Success", "Login Successful",
             backgroundColor: Colors.green,

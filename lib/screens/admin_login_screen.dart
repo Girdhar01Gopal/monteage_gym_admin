@@ -4,6 +4,215 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../controllers/admin_login_controller.dart';
+import '../utils/constants/image_constants.dart';
+import '../utils/custom_text.dart';
+
+class AdminLoginScreen extends StatelessWidget {
+  final AdminLoginController controller = Get.put(AdminLoginController());
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  Widget build(BuildContext context) {
+    // Initialize ScreenUtil for responsive design
+    ScreenUtil.init(context, designSize: Size(375, 812), minTextAdapt: true);
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          // Background Image
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/deepak.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+
+          // Login Box
+          Center(
+            child: Container(
+              width: 380.w, // Adjust width using ScreenUtil
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(20.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+                border: Border.all(color: Colors.white.withOpacity(0.3)),
+              ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Logo
+                    Image.asset(ImageConstatnts.LOGO, height: 60.h),
+                    SizedBox(height: 16.h),
+
+                    // Title
+                    AutoSizeText(
+                      "THE JUNGLE GYM",
+                      style: GoogleFonts.poppins(
+                        fontSize: 24.sp, // Responsive font size
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 32.h),
+
+                    // Login ID
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: CustomText(
+                        data: "Login Id",
+                        fontWeight: FontWeight.w500,
+                        fontSize: 16.sp,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 6.h),
+                    TextFormField(
+                      controller: controller.emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      style: TextStyle(color: Colors.white),
+                      decoration: _inputDecoration("Enter your Login Id", Icons.person),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your login id';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 20.h),
+
+                    // Password
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: CustomText(
+                        data: "Password",
+                        fontWeight: FontWeight.w500,
+                        fontSize: 16.sp,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 6.h),
+                    Obx(
+                          () => TextFormField(
+                        controller: controller.passwordController,
+                        obscureText: controller.obscurePassword.value,
+                        style: TextStyle(color: Colors.white),
+                        decoration: _inputDecoration(
+                          "Enter your Password",
+                          controller.obscurePassword.value
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          isPassword: true,
+                          togglePassword: controller.togglePasswordVisibility,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your password';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    SizedBox(height: 32.h),
+
+                    // Login Button
+                    Obx(
+                          () => InkWell(
+                        onTap: controller.isLoading.value
+                            ? null
+                            : () {
+                          if (_formKey.currentState!.validate()) {
+                            controller.login(
+                              controller.emailController.text.trim(),
+                              controller.passwordController.text.trim(),
+                            );
+                          } else {
+                            Get.snackbar(
+                              "Error",
+                              "Please fill in all fields correctly",
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                            );
+                          }
+                        },
+                        child: Container(
+                          height: 48.h,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Colors.orangeAccent,
+                            borderRadius: BorderRadius.circular(30.r),
+                          ),
+                          child: controller.isLoading.value
+                              ? CircularProgressIndicator(color: Colors.white)
+                              : AutoSizeText(
+                            "SIGN IN",
+                            style: GoogleFonts.poppins(
+                              fontSize: 16.sp, // Responsive font size
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Input field style
+  InputDecoration _inputDecoration(String hint, IconData icon,
+      {bool isPassword = false, VoidCallback? togglePassword}) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(color: Colors.white70),
+      prefixIcon: Icon(icon, color: Colors.white),
+      suffixIcon: isPassword
+          ? IconButton(
+        onPressed: togglePassword,
+        icon: Icon(icon, color: Colors.white),
+      )
+          : null,
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.1),
+      contentPadding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 12.w),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12.r),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12.r),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12.r),
+        borderSide: BorderSide(color: Colors.white70),
+      ),
+    );
+  }
+}
+
+
+
+/*import 'package:auto_size_text/auto_size_text.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../controllers/admin_login_controller.dart';
 import '../utils/constants/color_constants.dart';
 import '../utils/constants/image_constants.dart';
 import '../utils/custom_text.dart';
@@ -189,4 +398,4 @@ class AdminLoginScreen extends StatelessWidget {
       ),
     );
   }
-}
+}*/

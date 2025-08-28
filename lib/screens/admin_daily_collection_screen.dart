@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import '../controllers/admin_daily_collection_controller.dart';
 import '../utils/constants/color_constants.dart';
 
@@ -56,6 +58,16 @@ class AdminDailyCollectionScreen extends StatelessWidget {
     );
   }
 
+  // Helper method to format dates to dd-mm-yyyy
+  String formatDate(String dateStr) {
+    try {
+      final DateTime date = DateTime.parse(dateStr);
+      return DateFormat('dd-MM-yyyy').format(date); // Format as dd-MM-yyyy
+    } catch (e) {
+      return dateStr; // Return original if parsing fails
+    }
+  }
+
   Widget _buildCollectionTab({required bool isToday}) {
     return Obx(() {
       final allData = isToday ? controller.todayCollection : controller.monthlyCollection;
@@ -87,7 +99,10 @@ class AdminDailyCollectionScreen extends StatelessWidget {
                   ),
                   child: Card(
                     elevation: 4,
-                    margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    margin: EdgeInsets.symmetric(vertical: 6.h, horizontal: 16.w), // Reduced margin
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                     child: ListTile(
                       title: Text(data['Name'],
                           style: TextStyle(
@@ -98,8 +113,8 @@ class AdminDailyCollectionScreen extends StatelessWidget {
                         children: [
                           Text("Payment Received: ₹${data['RecivedAmount']}"),
                           Text("Payment Remaining: ₹${data['BalanceAmount']}"),
-                          Text("Next Payment Date: ${data['NextPaymentDate']}"),
-                          Text("Paid On: ${data['PaymentDate']}"),
+                          Text("Next Payment Date: ${formatDate(data['NextPaymentDate'])}"), // Updated date format
+                          Text("Paid On: ${formatDate(data['PaymentDate'])}"), // Updated date format
                           Text("Progress: ${data['PaymentStatus']}"),
                         ],
                       ),
@@ -118,11 +133,11 @@ class AdminDailyCollectionScreen extends StatelessWidget {
                 ? controller.todayTotal.value
                 : controller.monthlyTotal.value;
             return Padding(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
               child: Text(
                 "Total ${isToday ? "Today's" : "Monthly"} Collection: ₹${total.toStringAsFixed(2)}",
-                style: const TextStyle(
-                  fontSize: 16,
+                style: TextStyle(
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.bold,
                   color: Colors.green,
                 ),

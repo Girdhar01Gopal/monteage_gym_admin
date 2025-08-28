@@ -13,7 +13,7 @@ class AdminReportsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text("Admin Report's", style: TextStyle(color: Colors.white)),
+        title: Text("Admin Reports", style: TextStyle(color: Colors.white)),
         backgroundColor: AppColor.APP_Color_Indigo,
         leading: IconButton(
             icon: Icon(Icons.arrow_back, color: Colors.white),
@@ -82,22 +82,41 @@ class AdminReportsScreen extends StatelessWidget {
                           ),
                         ),
                         SizedBox(height: 8.h),
-                        Text("Father Name: ${ux.fatherName}"),
-                        Text("Email: ${ux.email}"),
-                        Text("Phone: ${ux.phone}"),
-                        Text("Address: ${ux.address}"),
-                        Text("Plan: ${ux.plan}"),
-                        Text("Total Payment: ₹${ux.totalPayment}"),
-                        Text("Due Payment: ₹${ux.duePayment}"),
-                        Text("Discount: ₹${ux.discount}"),
+
+                        // Email with email icon (blue)
+                        _buildIconRow(Icons.email, "Email: ${ux.email}", color: Colors.black),
+
+                        // Phone with phone icon (green)
+                        _buildIconRow(Icons.phone, "Phone: ${ux.phone}", color: Colors.black),
+
+                        // Address with location pin icon (orange)
+                        _buildIconRow(Icons.location_on, "Address: ${ux.address}", color: Colors.black),
+
+                        // Father's Name with man emoji (purple)
+                        _buildIconRow(Icons.person, "Father Name: ${ux.fatherName}", color: Colors.black),
+
+                        // Plan with card icon (yellow)
+                        _buildIconRow(Icons.credit_card, "Plan: ${ux.plan}", color: Colors.black),
+
+                        // Total Payment with small bag icon (black)
+                        _buildIconRow(Icons.shopping_bag, "Total Payment: ₹${ux.totalPayment.toStringAsFixed(0)}", color: Colors.black),
+
+                        // Due Payment with red dot icon (red)
+                        _buildIconRow(Icons.circle, "Due Payment: ₹${ux.duePayment.toStringAsFixed(0)}", color: ux.duePayment > 0 ? Colors.red : Colors.black),
+
+                        // Discount with green dot icon (green)
+                        _buildIconRow(Icons.circle, "Discount: ₹${ux.discount.toStringAsFixed(0)}", color: Colors.green),
+
                         SizedBox(height: 10.h),
                         Align(
                           alignment: Alignment.centerRight,
                           child: OutlinedButton.icon(
-                            icon: Icon(Icons.picture_as_pdf, color: Colors.red),
-                            label: Text("Export PDF", style: TextStyle(color: Colors.red)),
+                            icon: Icon(Icons.arrow_forward, color: Colors.white),
+                            label: Text("Export PDF", style: TextStyle(color: Colors.white)),
                             style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: Colors.black),
+                              side: BorderSide(color: Colors.red),
+                              backgroundColor: Colors.red, // Set background to red
+                              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5), // Reduce the button size
                             ),
                             onPressed: () => ctrl.exportUserReportPDF(ux),
                           ),
@@ -110,6 +129,20 @@ class AdminReportsScreen extends StatelessWidget {
             );
           })),
         ]),
+      ),
+    );
+  }
+
+  // Helper function to build icon rows with color
+  Widget _buildIconRow(IconData icon, String text, {Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
+      child: Row(
+        children: [
+          Icon(icon, color: color ?? Colors.black, size: 20),
+          SizedBox(width: 8),
+          Text(text, style: TextStyle(fontSize: 16.sp)),
+        ],
       ),
     );
   }

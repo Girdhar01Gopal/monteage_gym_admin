@@ -7,7 +7,7 @@ import '../utils/constants/color_constants.dart';
 class AdminFeePaymentsScreen extends StatelessWidget {
   final searchController = TextEditingController();
   final controller = Get.find<AdminFeePaymentsController>();
-  final _storage = GetStorage(); // GetStorage instance
+  final _storage = GetStorage();
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +46,7 @@ class AdminFeePaymentsScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        fee['Name'] ?? '',
+                        controller.capitalizeFirst(fee['Name']),
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: AppColor.APP_Color_Indigo,
@@ -64,20 +64,26 @@ class AdminFeePaymentsScreen extends StatelessWidget {
                           _buildFeeRow("Price", fee['Price']),
                           _buildFeeRow("Discount", fee['Discount']),
                           _buildFeeRow("Received Amount", fee['RecivedAmount']),
-                          _buildFeeRow("Balance Amount", fee['BalanceAmount']),
+                          _buildFeeRow("Balance Amount", fee['BalanceAmount'], isBalanceAmount: true, fee: fee),
+
+                          // Use NextPaymentDate for "Next Payment Date"
                           _buildTextRow("Next Payment Date", controller.formatDate(fee['NextPaymentDate'])),
-                          _buildTextRow("Package Expiry", controller.formatDate(fee['CreateDate'])),
-                          // Moved Joining Date to the bottom in red
+
+                          // Joining Date should map to PaymentDate (Date From)
+                          _buildTextRow("Joining Date", controller.formatDate(fee['PaymentDate'])),
+
+                          // Package Expiry (red) — now computed client-side if edited
                           Padding(
                             padding: const EdgeInsets.only(bottom: 6),
                             child: Text(
-                              "Joining Date: ${controller.formatDate(fee['CreateDate'])}",
+                              "Package Expiry: ${controller.formatDate(fee['PackageExpiryDate'] ?? '')}",
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.red,
                               ),
                             ),
                           ),
+
                           Align(
                             alignment: Alignment.centerRight,
                             child: IconButton(
@@ -85,7 +91,6 @@ class AdminFeePaymentsScreen extends StatelessWidget {
                               onPressed: () => controller.openFeePaymentDialog(fee),
                             ),
                           ),
-                          // Pay Now Button (Green) - Now with navigation
                           Align(
                             alignment: Alignment.centerRight,
                             child: ElevatedButton.icon(
@@ -93,7 +98,6 @@ class AdminFeePaymentsScreen extends StatelessWidget {
                               icon: const Icon(Icons.arrow_forward, color: Colors.white),
                               label: const Text("Pay Now", style: TextStyle(color: Colors.white)),
                               onPressed: () {
-                                // Navigate to the QR Payment screen
                                 Get.toNamed('/admin-qr-payment');
                               },
                             ),
@@ -111,15 +115,19 @@ class AdminFeePaymentsScreen extends StatelessWidget {
     );
   }
 
-  // Helper function to build the fee rows
-  Widget _buildFeeRow(String label, dynamic value) {
+  Widget _buildFeeRow(String label, dynamic value, {bool isBalanceAmount = false, Map<String, dynamic>? fee}) {
+    if (isBalanceAmount && fee != null) {
+      double price = double.tryParse(fee['Price'].toString()) ?? 0.0;
+      double discount = double.tryParse(fee['Discount'].toString()) ?? 0.0;
+      double receivedAmount = double.tryParse(fee['RecivedAmount'].toString()) ?? 0.0;
+      value = price - discount - receivedAmount;
+    }
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Text("$label: ₹${(value ?? 0).toString()}"),
     );
   }
 
-  // Helper function to build the text rows
   Widget _buildTextRow(String label, dynamic value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
@@ -127,7 +135,6 @@ class AdminFeePaymentsScreen extends StatelessWidget {
     );
   }
 
-  // Show search dialog
   void _showSearchDialog(BuildContext context) {
     searchController.text = controller.searchQuery.value;
     showDialog(

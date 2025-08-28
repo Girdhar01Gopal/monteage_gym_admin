@@ -13,6 +13,11 @@ class AdminFeePaymentsController extends GetxController {
   final _storage = GetStorage();
   var gymId;
 
+  // Display date format
+  final DateFormat _dfDisplay = DateFormat('dd-MM-yyyy');
+  // ISO date format
+  final DateFormat _dfIso = DateFormat('yyyy-MM-dd');
+
   @override
   void onInit() {
     super.onInit();
@@ -21,6 +26,8 @@ class AdminFeePaymentsController extends GetxController {
   }
 
   // Fetch Fee List of Members using GymId from storage
+  void fetchTrainersFromAPI() {} // (not used here)
+
   void fetchGymMemberFeeList(int gymId) async {
     final response = await http.get(
       Uri.parse('https://montgymapi.eduagentapp.com/api/MonteageGymApp/ViewMember/$gymId'),
@@ -35,7 +42,7 @@ class AdminFeePaymentsController extends GetxController {
         filteredPayments.assignAll(feePayments);
 
         List<int> memberIds = feePayments.map((payment) => payment['MemberId'] as int).toList();
-        memberid = memberIds; // If you want to store a list of member IDs
+        memberid = memberIds;
       } else {
         Get.snackbar('Error', 'No data found', backgroundColor: Colors.red, colorText: Colors.white);
       }
@@ -44,14 +51,49 @@ class AdminFeePaymentsController extends GetxController {
     }
   }
 
-  // Method to format date as dd-MM-yyyy
+  // Method to format date as dd-MM-yyyy for display
   String formatDate(String? dateStr) {
-    if (dateStr == null || dateStr.isEmpty) return '01-01-2024';
+    if (dateStr == null || dateStr.isEmpty) return '-';
+    // Try ISO first
     try {
       final date = DateTime.parse(dateStr);
-      return DateFormat('dd-MM-yyyy').format(date);  // Format as dd-MM-yyyy
-    } catch (e) {
-      return dateStr;  // Return original value if parsing fails
+      return _dfDisplay.format(date);
+    } catch (_) {
+      // Try already display format
+      try {
+        final date = _dfDisplay.parseStrict(dateStr);
+        return _dfDisplay.format(date);
+      } catch (_) {
+        return dateStr;
+      }
+    }
+  }
+
+  // Convert display (dd-MM-yyyy) or ISO into ISO (yyyy-MM-dd) for API
+  String toIsoDate(String? input) {
+    if (input == null || input.isEmpty) return '';
+    // Already ISO?
+    try {
+      final parsedIso = DateTime.parse(input);
+      return _dfIso.format(parsedIso);
+    } catch (_) {}
+    // Try display dd-MM-yyyy
+    try {
+      final parsedDisp = _dfDisplay.parseStrict(input);
+      return _dfIso.format(parsedDisp);
+    } catch (_) {
+      return input; // fall back with original if unknown
+    }
+  }
+
+  // Utility: add months safely (handles year wrap)
+  String addMonthsIso(String isoDate, int months) {
+    try {
+      final base = DateTime.parse(isoDate);
+      final res = DateTime(base.year, base.month + months, base.day);
+      return _dfIso.format(res);
+    } catch (_) {
+      return isoDate;
     }
   }
 
@@ -66,16 +108,47 @@ class AdminFeePaymentsController extends GetxController {
 
   // Open fee payment dialog
   void openFeePaymentDialog(Map<String, dynamic> feePayment) {
-    // Controllers for each input field
-    final priceController = TextEditingController(text: feePayment['Price'].toString());
-    final discountController = TextEditingController(text: feePayment['Discount'].toString());
-    final receivedAmountController = TextEditingController(text: feePayment['RecivedAmount'].toString());
-    final balanceAmountController = TextEditingController(text: feePayment['BalanceAmount'].toString());
-    final paymentStatusController = TextEditingController(text: feePayment['PaymentStatus']);
+    final priceController = TextEditingController(text: feePayment['Price']?.toString() ?? '');
+    final discountController = TextEditingController(text: feePayment['Discount']?.toString() ?? '');
+    final receivedAmountController = TextEditingController(text: feePayment['RecivedAmount']?.toString() ?? '');
+    final balanceAmountController = TextEditingController(text: feePayment['BalanceAmount']?.toString() ?? '');
+    final paymentStatusController = TextEditingController(text: feePayment['PaymentStatus'] ?? '');
 
-    // Controllers for the date fields
-    final dateFromController = TextEditingController(text: feePayment['DateFrom'] ?? '');
-    final dateToController = TextEditingController(text: feePayment['DateTo'] ?? '');
+    // Use PaymentDate for Joining Date (Date From)
+    final dateFromController = TextEditingController(
+      text: formatDate(feePayment['PaymentDate'] ?? ''),
+    );
+    // Use NextPaymentDate for Date To
+    final dateToController = TextEditingController(
+      text: formatDate(feePayment['NextPaymentDate'] ?? ''),
+    );
+
+    // Plan duration (months) to compute Package Expiry
+    int planDurationMonths = _inferPlanDuration(feePayment); // try to infer; fallback to 1
+    final expiryDisplay = TextEditingController(
+      text: formatDate(feePayment['PackageExpiryDate'] ?? ''),
+    );
+
+    // Function to update balance amount dynamically
+    void updateBalanceAmount() {
+      double price = double.tryParse(priceController.text) ?? 0.0;
+      double discount = double.tryParse(discountController.text) ?? 0.0;
+      double receivedAmount = double.tryParse(receivedAmountController.text) ?? 0.0;
+      double balanceAmount = price - discount - receivedAmount;
+      balanceAmountController.text = balanceAmount.toStringAsFixed(2);
+    }
+
+    // Update expiry on from/duration change
+    void updateExpiryFromInputs() {
+      final isoFrom = toIsoDate(dateFromController.text);
+      if (isoFrom.isEmpty) return;
+      final isoExpiry = addMonthsIso(isoFrom, planDurationMonths);
+      expiryDisplay.text = formatDate(isoExpiry);
+    }
+
+    priceController.addListener(updateBalanceAmount);
+    discountController.addListener(updateBalanceAmount);
+    receivedAmountController.addListener(updateBalanceAmount);
 
     // Open AlertDialog to edit fee data
     Get.dialog(
@@ -86,7 +159,9 @@ class AdminFeePaymentsController extends GetxController {
             return SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ---- Amounts ----
                   TextField(
                     controller: priceController,
                     keyboardType: TextInputType.number,
@@ -106,29 +181,107 @@ class AdminFeePaymentsController extends GetxController {
                     controller: balanceAmountController,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(labelText: "Balance Amount (₹)"),
+                    readOnly: true,
                   ),
                   TextField(
                     controller: paymentStatusController,
                     decoration: const InputDecoration(labelText: "Payment Status"),
                   ),
-                  // Date From Picker
+
+                  const SizedBox(height: 8),
+                  const Text(
+                    "Dates (Joining = Date From, Next Payment = Date To)",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+
+                  // ---- Plan Duration (months) ----
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Text("Plan Duration: "),
+                      const SizedBox(width: 12),
+                      DropdownButton<int>(
+                        value: planDurationMonths,
+                        items: const [
+                          DropdownMenuItem(value: 1, child: Text("1 month")),
+                          DropdownMenuItem(value: 3, child: Text("3 months")),
+                          DropdownMenuItem(value: 6, child: Text("6 months")),
+                          DropdownMenuItem(value: 12, child: Text("12 months")),
+                        ],
+                        onChanged: (val) {
+                          if (val == null) return;
+                          setState(() {
+                            planDurationMonths = val;
+                            updateExpiryFromInputs();
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+
+                  // ---- Date From (Joining) ----
                   GestureDetector(
-                    onTap: () => _selectDate(context, dateFromController),
+                    onTap: () async {
+                      final picked = await _selectDate(
+                        context,
+                        initial: _tryParseDisplay(dateFromController.text) ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2101),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          dateFromController.text = _dfDisplay.format(picked);
+                          // If Date To is earlier than Date From, clear Date To
+                          final to = _tryParseDisplay(dateToController.text);
+                          if (to != null && to.isBefore(picked)) {
+                            dateToController.text = '';
+                          }
+                          updateExpiryFromInputs();
+                        });
+                      }
+                    },
                     child: AbsorbPointer(
                       child: TextField(
                         controller: dateFromController,
-                        decoration: const InputDecoration(labelText: "Date From"),
+                        decoration: const InputDecoration(labelText: "Joining Date (Date From)"),
                       ),
                     ),
                   ),
-                  // Date To Picker
+
+                  // ---- Date To (Next Payment) with min = Date From ----
                   GestureDetector(
-                    onTap: () => _selectDate(context, dateToController),
+                    onTap: () async {
+                      final from = _tryParseDisplay(dateFromController.text);
+                      final first = from ?? DateTime(2000);
+                      final picked = await _selectDate(
+                        context,
+                        initial: _tryParseDisplay(dateToController.text) ?? (from ?? DateTime.now()),
+                        firstDate: first,
+                        lastDate: DateTime(2101),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          dateToController.text = _dfDisplay.format(picked);
+                        });
+                      } else {
+                        // no-op
+                      }
+                    },
                     child: AbsorbPointer(
                       child: TextField(
                         controller: dateToController,
-                        decoration: const InputDecoration(labelText: "Date To"),
+                        decoration: const InputDecoration(labelText: "Next Payment Date (Date To)"),
                       ),
+                    ),
+                  ),
+
+                  // ---- Computed Package Expiry (read-only, from Joining + duration) ----
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: expiryDisplay,
+                    readOnly: true,
+                    decoration: const InputDecoration(
+                      labelText: "Package Expiry (auto from Duration & Joining)",
                     ),
                   ),
                 ],
@@ -139,17 +292,31 @@ class AdminFeePaymentsController extends GetxController {
         actions: [
           TextButton(
             onPressed: () {
-              // Collect the updated values and prepare the data for the API call
+              // Collect ISO values for API
+              final isoFrom = toIsoDate(dateFromController.text);
+              final isoTo = toIsoDate(dateToController.text);
+
+              // Compute & update local expiry date (client-side update for display)
+              final isoExpiry = (isoFrom.isNotEmpty)
+                  ? addMonthsIso(isoFrom, planDurationMonths)
+                  : '';
+
+              // Update local item so card reflects changes immediately
+              feePayment['PaymentDate'] = isoFrom;            // Joining Date
+              feePayment['NextPaymentDate'] = isoTo;          // Next Payment Date
+              feePayment['PackageExpiryDate'] = isoExpiry;    // Computed from duration
+
+              // Send API (doesn't include expiry/duration per current backend contract)
               updateMemberFee(
                 feeId: feePayment['MemberId'],
                 Price: priceController.text,
                 Discount: discountController.text,
-                RecivedAmount: int.parse(receivedAmountController.text),
+                RecivedAmount: int.tryParse(receivedAmountController.text) ?? 0,
                 BalanceAmount: balanceAmountController.text,
                 PaymentStatus: paymentStatusController.text,
-                PaymentDate: dateFromController.text,
-                NextPaymentDate: dateToController.text,
-                UpdateBy: "1", // Assuming '1' is the user updating the fee
+                PaymentDate: isoFrom,
+                NextPaymentDate: isoTo,
+                UpdateBy: "1",
               );
 
               Get.back(); // Close the dialog
@@ -162,23 +329,40 @@ class AdminFeePaymentsController extends GetxController {
           ),
         ],
       ),
+    ).then((_) {
+      // After closing, refresh list to reflect possible local edits
+      filteredPayments.refresh();
+    });
+  }
+
+  // Date picker with params
+  Future<DateTime?> _selectDate(
+      BuildContext context, {
+        required DateTime initial,
+        required DateTime firstDate,
+        required DateTime lastDate,
+      }) async {
+    return await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: firstDate,
+      lastDate: lastDate,
     );
   }
 
-  // Method to show Date Picker
-  Future<void> _selectDate(BuildContext context, TextEditingController controller) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-    if (picked != null && picked != DateTime.now()) {
-      controller.text = "${picked.toLocal()}".split(' ')[0]; // Format date as YYYY-MM-DD
+  DateTime? _tryParseDisplay(String text) {
+    if (text.isEmpty) return null;
+    try {
+      return _dfDisplay.parseStrict(text);
+    } catch (_) {
+      try {
+        return DateTime.parse(text);
+      } catch (_) {
+        return null;
+      }
     }
   }
 
-  // Method to update member fee details
   Future<void> updateMemberFee({
     var feeId,
     var Price,
@@ -200,8 +384,8 @@ class AdminFeePaymentsController extends GetxController {
         "RecivedAmount": RecivedAmount,
         "BalanceAmount": BalanceAmount,
         "PaymentStatus": PaymentStatus,
-        "PaymentDate": PaymentDate,
-        "NextPaymentDate": NextPaymentDate,
+        "PaymentDate": PaymentDate,           // ISO yyyy-MM-dd
+        "NextPaymentDate": NextPaymentDate,   // ISO yyyy-MM-dd
         "GymeId": gymId.toString(),
         "UpdateBy": UpdateBy,
       }),
@@ -210,12 +394,29 @@ class AdminFeePaymentsController extends GetxController {
     if (response.statusCode == 200) {
       Get.snackbar('Success', 'Fee updated successfully.',
           backgroundColor: Colors.green, colorText: Colors.white);
-
-      // Optionally, refresh data
-      fetchGymMemberFeeList(1);  // Refresh the data after update
+      // Refresh from server if you want to re-sync. Keeping local refresh for snappy UX.
+      // fetchGymMemberFeeList(gymId);
     } else {
       Get.snackbar('Error', 'Failed to update fee.',
           backgroundColor: Colors.red, colorText: Colors.white);
     }
+  }
+
+  // ---------- Helpers ----------
+  String capitalizeFirst(String? text) {
+    if (text == null || text.isEmpty) return '';
+    return text[0].toUpperCase() + text.substring(1).toLowerCase();
+  }
+
+  // Try to infer plan duration from data (optional helper, default 1 month)
+  int _inferPlanDuration(Map<String, dynamic> feePayment) {
+    // If your API returns a duration field, map it here. Example keys:
+    for (final key in ['PlanDuration', 'Duration', 'PlanMonths', 'Months']) {
+      final v = feePayment[key];
+      if (v == null) continue;
+      final m = int.tryParse(v.toString());
+      if (m != null && m > 0) return m;
+    }
+    return 1;
   }
 }

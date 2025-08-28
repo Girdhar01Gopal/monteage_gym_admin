@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:image_picker/image_picker.dart';
@@ -68,73 +69,57 @@ class AddMemberScreen extends StatelessWidget {
               ),
             )),
             const SizedBox(height: 16),
-            buildTextField("Name", controller.nameController),
-            buildReactiveDropdown("Gym Plan", controller.selectedPlan, controller.plans),
-            buildTextField("Father / Husband Name", controller.fatherController),
+
+            // Personal Information Section
+            _buildSectionHeader("Personal Information"),
+            buildTextField("Name", controller.nameController, inputType: TextInputType.text, inputFormatters: [controller.nameFormatter]),
+            buildTextField("Father / Husband Name", controller.fatherController, inputType: TextInputType.text, inputFormatters: [controller.nameFormatter]),
             buildTextField("Email", controller.emailController),
-            buildTextField("Phone", controller.phoneController),
 
-            // WhatsApp checkbox logic
-            Row(
-              children: [
-                Obx(() =>
-                    Checkbox(
-                      value: controller.isSameAsPhone.value,
-                      onChanged: (val) => controller.isSameAsPhone.value = val ?? false,
-                    )),
-                const Text("Same as phone number"),
-              ],
-            ),
-            Obx(() =>
-                buildTextField(
-                  "WhatsApp Number",
-                  controller.whatsappController,
-                  readOnly: controller.isSameAsPhone.value,
-                )),
-
-            buildTextField("Emergency Number", controller.emergencyController),
+            // Contact Information Section
+            _buildSectionHeader("Contact Information"),
+            buildTextField("Phone", controller.phoneController, inputType: TextInputType.phone, inputFormatters: [controller.phoneFormatter], maxLength: 10),
+            buildTextField("WhatsApp Number", controller.whatsappController, inputType: TextInputType.phone, inputFormatters: [controller.whatsappFormatter], maxLength: 10),
+            buildTextField("Emergency Number", controller.emergencyController, inputType: TextInputType.phone, inputFormatters: [controller.emergencyFormatter], maxLength: 10),
             buildTextField("Address", controller.addressController),
-            buildTextField("Height (cm)", controller.heightController),
+
+            // Physical Information Section
+            _buildSectionHeader("Physical Information"),
+            buildTextField("Height (ft)", controller.heightController),
             buildTextField("Weight (kg)", controller.weightController),
             buildReactiveDropdown("Gender", controller.selectedGender, ['Male', 'Female', 'Other']),
+
+            // Membership Information Section
+            _buildSectionHeader("Membership Information"),
             buildTextField("Plan Amount (₹)", controller.planAmountController, readOnly: true),
-            buildTextField(
-              "Joining Date",
-              controller.joinDateController,
-              readOnly: true,
-              onTap: () => controller.pickDate(context, controller.joinDateController, isJoiningDate: true),
-            ),
-
+            buildTextField("Joining Date", controller.joinDateController, readOnly: true, onTap: () => controller.pickDate(context, controller.joinDateController, isJoiningDate: true)),
             buildTextField("Discount (₹)", controller.discountController),
-
-            buildTextField(
-              "Next Fee Payment Date",
-              controller.nextFeeDateController,
-              readOnly: true,
-              onTap: () => controller.pickDate(context, controller.nextFeeDateController),
-            ),
+            buildTextField("Next Fee Payment Date", controller.nextFeeDateController, readOnly: true, onTap: () => controller.pickDate(context, controller.nextFeeDateController)),
             buildTextField("Package Expiry Date", controller.packageExpiryController, readOnly: true),
+
             const SizedBox(height: 10),
             ElevatedButton(
               onPressed: controller.isLoading.value
-                  ? null  // Disable the button when loading
+                  ? null
                   : () {
                 final gymId = GetStorage().read('gymId') ?? 0;
-                // Get the selected plan and retrieve its ID from the plans list
+
+                // Get selected plan & id
                 final selectedPlanData = controller.plans.firstWhere(
                       (plan) => plan['PlanTittle'] == controller.selectedPlan.value,
                   orElse: () => null,
                 );
-                final planId = selectedPlanData != null ? selectedPlanData['PlanId'] : 0; // Default to 0 if no plan is selected
+                final planId = selectedPlanData != null ? selectedPlanData['PlanId'] : 0;
 
-                // Call addMemberAPI with necessary parameters
                 controller.addMemberAPI(
                   controller.nameController.text,
                   planId,
                   controller.fatherController.text,
                   controller.emailController.text,
                   controller.phoneController.text,
-                  controller.isSameAsPhone.value ? controller.phoneController.text : controller.whatsappController.text,
+                  controller.isSameAsPhone.value
+                      ? controller.phoneController.text
+                      : controller.whatsappController.text,
                   controller.emergencyController.text,
                   controller.addressController.text,
                   controller.heightController.text,
@@ -145,20 +130,17 @@ class AddMemberScreen extends StatelessWidget {
                   controller.joinDateController.text,
                   controller.packageExpiryController.text,
                   gymId.toString(),
-                  '1', // Assuming admin as the creator, change as needed
-                  base64Image.toString(), // Adding base64Image to send with the request
+                  '1', // creator/admin id
+                  base64Image.toString(),
                 );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColor.APP_Color_Indigo,
                 padding: const EdgeInsets.symmetric(vertical: 18),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: controller.isLoading.value
-                  ? const CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              )
+                  ? const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white))
                   : const Text(" Add Member ", style: TextStyle(color: Colors.white)),
             ),
           ],
@@ -167,7 +149,19 @@ class AddMemberScreen extends StatelessWidget {
     );
   }
 
-  Widget buildTextField(String label, TextEditingController controller, {bool readOnly = false, VoidCallback? onTap}) {
+  // Helper function to create section headers with bold font
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+      ),
+    );
+  }
+
+  Widget buildTextField(String label, TextEditingController controller,
+      {bool readOnly = false, VoidCallback? onTap, TextInputType inputType = TextInputType.text, List<TextInputFormatter>? inputFormatters, int? maxLength}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -177,7 +171,9 @@ class AddMemberScreen extends StatelessWidget {
           controller: controller,
           readOnly: readOnly,
           onTap: onTap,
-          keyboardType: TextInputType.text,
+          keyboardType: inputType,
+          inputFormatters: inputFormatters,
+          maxLength: maxLength,
           decoration: InputDecoration(
             hintText: "Enter $label",
             filled: true,
@@ -208,33 +204,32 @@ class AddMemberScreen extends StatelessWidget {
       children: [
         Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 6),
-        Obx(() =>
-            DropdownButtonFormField<String>(
-              value: selectedValue.value.isEmpty ? null : selectedValue.value,
-              items: options.map((e) {
-                if (e is Map<String, dynamic>) {
-                  return DropdownMenuItem<String>(
-                    value: e['PlanTittle'],
-                    child: Text(e['PlanTittle']),
-                  );
-                } else {
-                  return DropdownMenuItem<String>(
-                    value: e as String,
-                    child: Text(e),
-                  );
-                }
-              }).toList(),
-              onChanged: (val) {
-                if (val != null) {
-                  selectedValue.value = val; // This will trigger the listener in controller
-                }
-              },
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.grey.shade100,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            )),
+        Obx(() => DropdownButtonFormField<String>(
+          value: selectedValue.value.isEmpty ? null : selectedValue.value,
+          items: options.map((e) {
+            if (e is Map<String, dynamic>) {
+              return DropdownMenuItem<String>(
+                value: e['PlanTittle'],
+                child: Text(e['PlanTittle']),
+              );
+            } else {
+              return DropdownMenuItem<String>(
+                value: e as String,
+                child: Text(e),
+              );
+            }
+          }).toList(),
+          onChanged: (val) {
+            if (val != null) {
+              selectedValue.value = val;
+            }
+          },
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.grey.shade100,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        )),
         const SizedBox(height: 12),
       ],
     );

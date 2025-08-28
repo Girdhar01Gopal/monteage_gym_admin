@@ -31,6 +31,7 @@ class MemberModel {
 }
 
 class Data {
+  // Existing fields
   int? memberId;
   String? name;
   int? planId;
@@ -60,36 +61,45 @@ class Data {
   int? createdby;
   int? updatedby;
 
-  Data(
-      {this.memberId,
-        this.name,
-        this.planId,
-        this.planTittle,
-        this.fatherName,
-        this.emailid,
-        this.phone,
-        this.whatsappNo,
-        this.emergencyNo,
-        this.address,
-        this.height,
-        this.weight,
-        this.gender,
-        this.price,
-        this.discount,
-        this.joiningDate,
-        this.packageExpiryDate,
-        this.action,
-        this.createBy,
-        this.updateBy,
-        this.createDate,
-        this.gymeId,
-        this.isActive,
-        this.createdDate,
-        this.date,
-        this.modifiedDate,
-        this.createdby,
-        this.updatedby});
+  // New fields for trainer information
+  String? trainerName;  // For storing trainer name
+  String? trainerCharge;  // For storing trainer charge
 
+  // Constructor with new fields included
+  Data({
+    this.memberId,
+    this.name,
+    this.planId,
+    this.planTittle,
+    this.fatherName,
+    this.emailid,
+    this.phone,
+    this.whatsappNo,
+    this.emergencyNo,
+    this.address,
+    this.height,
+    this.weight,
+    this.gender,
+    this.price,
+    this.discount,
+    this.joiningDate,
+    this.packageExpiryDate,
+    this.action,
+    this.createBy,
+    this.updateBy,
+    this.createDate,
+    this.gymeId,
+    this.isActive,
+    this.createdDate,
+    this.date,
+    this.modifiedDate,
+    this.createdby,
+    this.updatedby,
+    this.trainerName,   // Initialize trainerName
+    this.trainerCharge, // Initialize trainerCharge
+  });
+
+  // Deserialize from JSON
   Data.fromJson(Map<String, dynamic> json) {
     memberId = json['MemberId'];
     name = json['Name'];
@@ -119,8 +129,13 @@ class Data {
     modifiedDate = json['ModifiedDate'];
     createdby = json['Createdby'];
     updatedby = json['Updatedby'];
+
+    // Deserialize the trainer information
+    trainerName = json['trainerName']; // Deserialize trainerName
+    trainerCharge = json['trainerCharge']; // Deserialize trainerCharge
   }
 
+  // Convert back to JSON
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['MemberId'] = this.memberId;
@@ -151,6 +166,10 @@ class Data {
     data['ModifiedDate'] = this.modifiedDate;
     data['Createdby'] = this.createdby;
     data['Updatedby'] = this.updatedby;
+
+    // Serialize the trainer information
+    data['trainerName'] = this.trainerName; // Serialize trainerName
+    data['trainerCharge'] = this.trainerCharge; // Serialize trainerCharge
     return data;
   }
 }

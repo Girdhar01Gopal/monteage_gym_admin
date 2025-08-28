@@ -60,6 +60,8 @@ class AdminReportsController extends GetxController {
 
   void exportUserReportPDF(UserReport u) async {
     final pdf = pw.Document();
+
+    // Add data to PDF with ₹ symbol and no decimal points
     pdf.addPage(pw.Page(
       build: (ctx) => pw.Column(children: [
         pw.Text('Report for ${u.name}', style: pw.TextStyle(fontSize: 22)),
@@ -70,9 +72,9 @@ class AdminReportsController extends GetxController {
         pw.Text('Address: ${u.address}'),
         pw.Text('Father Name: ${u.fatherName}'),
         pw.Text('Plan: ${u.plan}'),
-        pw.Text('Total Payment: ₹${u.totalPayment}'),
-        pw.Text('Due Payment: ₹${u.duePayment}'),
-        pw.Text('Discount: ₹${u.discount}'),
+        pw.Text('Total Payment: ₹${u.totalPayment.toStringAsFixed(0)}'),
+        pw.Text('Due Payment: ₹${u.duePayment.toStringAsFixed(0)}'),
+        pw.Text('Discount: ₹${u.discount.toStringAsFixed(0)}'),
       ]),
     ));
 

@@ -11,13 +11,16 @@ import '../infrastructure/routes/admin_routes.dart';
 class AdminDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    // Initialize ScreenUtil
+    ScreenUtil.init(context, designSize: Size(375, 812), minTextAdapt: true);
+
     final controller = Get.find<AdminDashboardController>();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       drawer: AdminDrawer(),
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(60.h),
+        preferredSize: Size.fromHeight(60.h), // Adjusted for responsiveness
         child: AppBar(
           elevation: 0,
           automaticallyImplyLeading: false,
@@ -29,7 +32,7 @@ class AdminDashboardScreen extends StatelessWidget {
                 end: Alignment.bottomRight,
               ),
             ),
-            padding: EdgeInsets.symmetric(horizontal: 12.w),
+            padding: EdgeInsets.symmetric(horizontal: 12.w), // Scaled padding
             child: SafeArea(
               child: Stack(
                 alignment: Alignment.center,
@@ -45,8 +48,8 @@ class AdminDashboardScreen extends StatelessWidget {
                   ),
                   Center(
                     child: Image.asset(
-                      'assets/images/logo.jpeg',
-                      height: 50.h,
+                      'assets/images/girdhar.png',
+                      height: 50.h, // Scaled image height
                     ),
                   ),
                   Align(
@@ -81,30 +84,30 @@ class AdminDashboardScreen extends StatelessWidget {
         child: const Icon(Icons.person_add, color: Colors.white),
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h), // Scaled padding
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildWelcomeSection(),
-            SizedBox(height: 16.h),
+            SizedBox(height: 8.h), // Scaled gap
             _buildCollectionIndicators(controller),
-            SizedBox(height: 20.h),
+            SizedBox(height: 16.h), // Scaled gap
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildSectionHeader("User Overview"),
-                SizedBox(width: 8.w),
+                SizedBox(width: 6.w), // Scaled gap
                 Expanded(
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
                         _legendBox(Colors.amber, "Morning"),
-                        SizedBox(width: 6),
+                        SizedBox(width: 4.w), // Scaled gap
                         _legendBox(Colors.deepOrange, "Evening"),
-                        SizedBox(width: 6),
+                        SizedBox(width: 4.w), // Scaled gap
                         _legendBox(Colors.blue, "Total"),
-                        SizedBox(width: 6),
+                        SizedBox(width: 4.w), // Scaled gap
                         _legendBox(Colors.green, "Active"),
                       ],
                     ),
@@ -112,11 +115,11 @@ class AdminDashboardScreen extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: 10.h),
+            SizedBox(height: 8.h), // Scaled gap
             _buildCombinedChart(controller),
-            SizedBox(height: 20.h),
+            SizedBox(height: 16.h), // Scaled gap
             _buildSectionHeader("Quick Actions"),
-            SizedBox(height: 10.h),
+            SizedBox(height: 6.h), // Scaled gap
             _buildActionButtons(),
           ],
         ),
@@ -125,18 +128,32 @@ class AdminDashboardScreen extends StatelessWidget {
   }
 
   Widget _buildWelcomeSection() {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Row(
+          children: [
+            Text(
+              "THE JUNGLE GYM!",
+              style: GoogleFonts.poppins(
+                fontSize: 22.sp, // Scaled font size
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+            SizedBox(width: 6.w), // Scaled gap
+            Icon(Icons.waving_hand, color: Colors.amber.shade700, size: 22.r), // Scaled icon size
+          ],
+        ),
+        SizedBox(height: 2.h), // Reduced gap
         Text(
-          "THE JUNGLE GYM!",
+          "Manage your gym effortlessly",  // ✅ New subtitle
           style: GoogleFonts.poppins(
-            fontSize: 22.sp,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            fontSize: 14.sp, // Scaled font size
+            fontWeight: FontWeight.w400,
+            color: Colors.grey.shade700,
           ),
         ),
-        SizedBox(width: 8.w),
-        Icon(Icons.waving_hand, color: Colors.amber.shade700, size: 24.r),
       ],
     );
   }
@@ -147,12 +164,11 @@ class AdminDashboardScreen extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         Obx(() => _buildClickableIndicator(
-            "Today's Collection", controller.totalFeePaid.value, AdminRoutes.DAILY_COLLECTION)),
+            "Today Collection", controller.totalFeePaid.value, AdminRoutes.DAILY_COLLECTION)),
         Obx(() => _buildClickableIndicator(
             "$currentMonth Collection", controller.monthlyCollection.value, AdminRoutes.DAILY_COLLECTION)),
       ],
     );
-
   }
 
   // Adding click functionality to the indicator cards
@@ -165,15 +181,15 @@ class AdminDashboardScreen extends StatelessWidget {
 
   Widget _styledIndicator(String label, double amount) {
     return Container(
-      width: 160.w,
-      padding: EdgeInsets.all(16.w),
-      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      width: 150.w, // Scaled width
+      padding: EdgeInsets.all(14.w), // Scaled padding
+      margin: EdgeInsets.symmetric(vertical: 6.h, horizontal: 10.w), // Scaled margin
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
+        borderRadius: BorderRadius.circular(10.r), // Scaled border radius
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
+            color: Colors.grey.withOpacity(0.2),
             spreadRadius: 2,
             blurRadius: 6,
             offset: Offset(0, 3),
@@ -184,10 +200,10 @@ class AdminDashboardScreen extends StatelessWidget {
         children: [
           Text(
             "₹ ${amount.toStringAsFixed(2)}",
-            style: TextStyle(fontSize: 22.sp, fontWeight: FontWeight.bold, color: Colors.indigo),
+            style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold, color: Colors.indigo),
           ),
-          SizedBox(height: 8.h),
-          Text(label, style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade800)),
+          SizedBox(height: 6.h), // Scaled gap
+          Text(label, style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade800)),
         ],
       ),
     );
@@ -197,7 +213,7 @@ class AdminDashboardScreen extends StatelessWidget {
     return Text(
       title,
       style: GoogleFonts.poppins(
-        fontSize: 18.sp,
+        fontSize: 16.sp, // Scaled font size
         fontWeight: FontWeight.bold,
         color: Colors.black87,
       ),
@@ -207,15 +223,15 @@ class AdminDashboardScreen extends StatelessWidget {
   Widget _legendBox(Color color, String label) {
     return Row(
       children: [
-        Container(width: 10, height: 10, color: color, margin: const EdgeInsets.only(right: 4)),
-        Text(label, style: const TextStyle(fontSize: 12)),
+        Container(width: 8.w, height: 8.h, color: color, margin: const EdgeInsets.only(right: 4)),
+        Text(label, style: const TextStyle(fontSize: 10)),
       ],
     );
   }
 
   Widget _buildCombinedChart(AdminDashboardController controller) {
     return AspectRatio(
-      aspectRatio: 1.6,
+      aspectRatio: 1.5, // Adjusted aspect ratio for responsiveness
       child: Stack(
         children: [
           Obx(() => BarChart(
@@ -230,14 +246,14 @@ class AdminDashboardScreen extends StatelessWidget {
                       fromY: 0,
                       toY: morning,
                       color: Colors.amber,
-                      width: 14,
+                      width: 12.w, // Scaled width
                       borderRadius: BorderRadius.zero,
                     ),
                     BarChartRodData(
                       fromY: morning,
                       toY: morning + evening,
                       color: Colors.deepOrange,
-                      width: 14,
+                      width: 12.w, // Scaled width
                       borderRadius: BorderRadius.zero,
                     ),
                   ],
@@ -251,9 +267,9 @@ class AdminDashboardScreen extends StatelessWidget {
                       final index = value.toInt();
                       return Text(
                         index >= 0 && index < controller.months.length
-                            ? controller.months[index]
+                            ?  controller.months[index]
                             : '',
-                        style: const TextStyle(fontSize: 10),
+                        style: TextStyle(fontSize: 8.sp),  // Scaled font size
                       );
                     },
                   ),
@@ -306,12 +322,12 @@ class AdminDashboardScreen extends StatelessWidget {
   Widget _buildActionButtons() {
     return Column(
       children: [
-        _dashboardButton("View Collection's", Icons.calendar_today, AdminRoutes.DAILY_COLLECTION, Color(0xFF0288D1)),
-        SizedBox(height: 12.h),
-        _dashboardButton("Manage package's", Icons.manage_accounts, AdminRoutes.ADMIN_MANAGE_PLAN, Color(0xFFD81B60)),
-        SizedBox(height: 12.h),
+        _dashboardButton("View Collections", Icons.calendar_today, AdminRoutes.DAILY_COLLECTION, Color(0xFF0288D1)),
+        SizedBox(height: 6.h), // Scaled gap
+        _dashboardButton("Manage packages", Icons.manage_accounts, AdminRoutes.ADMIN_MANAGE_PLAN, Color(0xFFD81B60)),
+        SizedBox(height: 6.h), // Scaled gap
         _dashboardButton("Total Payment Details", Icons.currency_rupee, AdminRoutes.ADMIN_FEE_PAYMENTS, Color(0xFF388E3C)),
-        SizedBox(height: 12.h),
+        SizedBox(height: 6.h), // Scaled gap
         _dashboardButton("Receive Payment (QR)", Icons.qr_code, AdminRoutes.ADMIN_QR_PAYMENT, Color(0xFF512DA8)),
       ],
     );
@@ -327,7 +343,7 @@ class AdminDashboardScreen extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
           elevation: 3,
-          padding: EdgeInsets.symmetric(vertical: 14.h),
+          padding: EdgeInsets.symmetric(vertical: 12.h), // Scaled padding
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
         ),
       ),

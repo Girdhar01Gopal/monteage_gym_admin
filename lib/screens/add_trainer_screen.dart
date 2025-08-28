@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../controllers/admin_add_trainer_controller.dart';
 import '../infrastructure/routes/admin_routes.dart';
 import '../utils/constants/color_constants.dart';
+import 'package:flutter/services.dart'; // For input formatting
 
 class AddTrainerScreen extends StatelessWidget {
   final controller = Get.find<AdminAddTrainerController>();
@@ -19,8 +20,8 @@ class AddTrainerScreen extends StatelessWidget {
   final salaryController = TextEditingController();
   final descriptionController = TextEditingController();
   final joinDateController = TextEditingController();
-  final startDateController = TextEditingController();  // Start Time Controller
-  final endDateController = TextEditingController();    // End Date Controller
+  final startTimeController = TextEditingController();  // Start Time Controller
+  final endTimeController = TextEditingController();    // End Time Controller
   final newCourseController = TextEditingController();
   final Rx<File?> selectedImage = Rx<File?>(null);
   String base64Image = '';
@@ -28,10 +29,9 @@ class AddTrainerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    controller.fetchCoursesFromAPI(); // Refresh course list
+    controller.fetchCoursesFromAPI();
 
-    // Fetch gymId from GetStorage (which is saved during login)
-    final gymId = GetStorage().read('gymId') ?? 0; // Default to 0 if gymId is not found
+    final gymId = GetStorage().read('gymId') ?? 0;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -54,13 +54,12 @@ class AddTrainerScreen extends StatelessWidget {
                 backgroundImage: selectedImage.value != null ? FileImage(selectedImage.value!) : null,
                 child: selectedImage.value == null ? const Icon(Icons.camera_alt, size: 32) : null,
               ),
-
             )),
             const SizedBox(height: 20),
             _buildTextField("Name", nameController),
             _buildDropdown("Select Gender", controller.selectedGender, genders),
             _buildTextField("Email (Gmail only)", emailController, keyboard: TextInputType.emailAddress),
-            _buildTextField("Phone Number", controller.phoneController, keyboard: TextInputType.phone),
+            _buildTextField("Phone Number", controller.phoneController, keyboard: TextInputType.phone, inputFormatter: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)]),
             Row(
               children: [
                 Obx(() => Checkbox(
@@ -70,10 +69,12 @@ class AddTrainerScreen extends StatelessWidget {
                 const Text("Same as phone number"),
               ],
             ),
-            Obx(() => _buildTextField("WhatsApp Number", controller.whatsappController, keyboard: TextInputType.phone, readOnly: controller.isSameAsPhone.value)),
-            _buildTextField("Emergency Contact No", emergencyController, keyboard: TextInputType.phone),
+            Obx(() => _buildTextField("WhatsApp Number", controller.whatsappController, keyboard: TextInputType.phone, readOnly: controller.isSameAsPhone.value, inputFormatter: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)])),
+            _buildTextField("Emergency Contact No", emergencyController, keyboard: TextInputType.phone, inputFormatter: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)]),
             _buildTextField("Experience (Years)", experienceController, keyboard: TextInputType.number),
             _buildTextField("Add Salary ₹", salaryController, keyboard: TextInputType.number),
+
+            // Joining Date
             TextField(
               controller: joinDateController,
               readOnly: true,
@@ -81,20 +82,23 @@ class AddTrainerScreen extends StatelessWidget {
               decoration: const InputDecoration(labelText: "Joining Date"),
             ),
             const SizedBox(height: 20),
-            // Start Date Picker
+
+            // Start Time Picker
             TextField(
-              controller: startDateController,
+              controller: startTimeController,
               readOnly: true,
-              onTap: () => _pickDate(startDateController, context),
+              onTap: () => _pickTime(startTimeController, context),
               decoration: const InputDecoration(labelText: "Start Time"),
             ),
-            // End Date Picker
+
+            // End Time Picker
             TextField(
-              controller: endDateController,
+              controller: endTimeController,
               readOnly: true,
-              onTap: () => _pickDate(endDateController, context),
+              onTap: () => _pickTime(endTimeController, context),
               decoration: const InputDecoration(labelText: "End Time"),
             ),
+
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -132,12 +136,9 @@ class AddTrainerScreen extends StatelessWidget {
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
               onPressed: () async {
-                // Pass gymId from GetStorage
                 final gymId = GetStorage().read('gymId') ?? 0;
-
-                // Format the start and end dates
-                final startDate = startDateController.text.trim();
-                final endDate = endDateController.text.trim();
+                final startTime = startTimeController.text.trim();
+                final endTime = endTimeController.text.trim();
 
                 await controller.submitTrainerData(
                   name: nameController.text.trim(),
@@ -151,15 +152,14 @@ class AddTrainerScreen extends StatelessWidget {
                   description: descriptionController.text.trim(),
                   newcourse: controller.selectedCourseIds.join(","),
                   gender: controller.selectedGender.value,
-                  startdate: startDate,
-                  enddate: endDate,
+                  starttime: startTime,
+                  endtime: endTime,
                   usertype: 'Trainer',
                   gymid: gymId.toString(),
-                  createdby: 'admin', image: base64Image,
+                  createdby: 'admin',
+                  image: base64Image,
                 );
 
-              //  final trainerListController = Get.find<AdminTrainerListController>();
-                //await trainerListController.fetchTrainersFromAPI();
                 Get.offAllNamed(AdminRoutes.ADMIN_TRAINER_LIST);
               },
               child: const Text("Add Trainer", style: TextStyle(color: Colors.white)),
@@ -170,7 +170,7 @@ class AddTrainerScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, {TextInputType keyboard = TextInputType.text, int maxLines = 1, bool readOnly = false}) {
+  Widget _buildTextField(String label, TextEditingController controller, {TextInputType keyboard = TextInputType.text, int maxLines = 1, bool readOnly = false, List<TextInputFormatter>? inputFormatter}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: TextField(
@@ -178,6 +178,7 @@ class AddTrainerScreen extends StatelessWidget {
         readOnly: readOnly,
         keyboardType: keyboard,
         maxLines: maxLines,
+        inputFormatters: inputFormatter,
         decoration: InputDecoration(labelText: label, border: OutlineInputBorder()),
       ),
     );
@@ -201,8 +202,6 @@ class AddTrainerScreen extends StatelessWidget {
     if (picked != null) {
       final file = File(picked.path);
       selectedImage.value = file;
-
-      // Convert to base64 string
       List<int> imageBytes = await file.readAsBytes();
       base64Image = base64Encode(imageBytes);
     }
@@ -213,74 +212,9 @@ class AddTrainerScreen extends StatelessWidget {
     if (date != null) controller.text = DateFormat('yyyy-MM-dd').format(date);
   }
 
-  Widget _buildAvailabilitySection(String label, RxList<String> slots, BuildContext context) {
-    return Obx(() => Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(label),
-            IconButton(
-              icon: const Icon(Icons.add_circle, color: Colors.blue),
-              onPressed: () => _showTimeSlotDialog(label, slots, context),
-            ),
-          ],
-        ),
-        Wrap(
-          spacing: 8,
-          children: slots.map((slot) =>
-              Chip(label: Text(slot), onDeleted: () => slots.remove(slot))).toList(),
-        )
-      ],
-    ));
-  }
-
-  void _showTimeSlotDialog(String label, RxList<String> slotList, BuildContext context) {
-    TimeOfDay? fromTime;
-    TimeOfDay? toTime;
-    Get.dialog(StatefulBuilder(
-      builder: (context, setState) {
-        return AlertDialog(
-          title: Text("Add $label Slot"),
-          content: Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () async {
-                    final picked = await showTimePicker(context: context, initialTime: TimeOfDay.now());
-                    if (picked != null) setState(() => fromTime = picked);
-                  },
-                  child: Text(fromTime != null ? fromTime!.format(context) : "From"),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () async {
-                    final picked = await showTimePicker(context: context, initialTime: TimeOfDay.now());
-                    if (picked != null) setState(() => toTime = picked);
-                  },
-                  child: Text(toTime != null ? toTime!.format(context) : "To"),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Get.back(), child: const Text("Cancel")),
-            ElevatedButton(
-              onPressed: () {
-                if (fromTime != null && toTime != null) {
-                  final slot = "${fromTime!.format(context)} - ${toTime!.format(context)}";
-                  if (!slotList.contains(slot)) slotList.add(slot);
-                }
-                Get.back();
-              },
-              child: const Text("Add"),
-            ),
-          ],
-        );
-      },
-    ));
+  void _pickTime(TextEditingController controller, BuildContext context) async {
+    final time = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+    if (time != null) controller.text = time.format(context);
   }
 
   void _addCustomCourseDialog(BuildContext context) {

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:image_picker/image_picker.dart';
@@ -39,7 +40,7 @@ class _AdminDrawerState extends State<AdminDrawer> {
                     onTap: _pickImage,
                     child: Center(
                       child: Image.asset(
-                        'assets/images/logo.jpeg', // Increased logo size
+                        'assets/images/girdhar.png', // Increased logo size
                         height: 100, // Adjust logo size as needed
                       ),
                     ),
@@ -63,14 +64,23 @@ class _AdminDrawerState extends State<AdminDrawer> {
                 child: Column(
                   children: [
                     _buildDrawerItem("Dashboard", Icons.dashboard, AdminRoutes.ADMIN_DASHBOARD, currentRoute),
+                    _buildDivider(),
                     _buildDrawerItem("Gym Profile", Icons.sports_gymnastics, AdminRoutes.GYM_PROFILE, currentRoute),
-                    _buildDrawerItem("Package's", Icons.account_balance_wallet, AdminRoutes.ADMIN_MANAGE_PLAN, currentRoute),
+                    _buildDivider(),
+                    _buildDrawerItem("Packages", Icons.account_balance_wallet, AdminRoutes.ADMIN_MANAGE_PLAN, currentRoute),
+                    _buildDivider(),
                     _buildDrawerItem("Add Trainer", Icons.add_circle, AdminRoutes.ADD_TRAINER_SCREEN, currentRoute),
+                    _buildDivider(),
                     _buildDrawerItem("Trainer List", Icons.list, AdminRoutes.ADMIN_TRAINER_LIST, currentRoute),
-                    _buildDrawerItem("Add Member's", Icons.person_add, AdminRoutes.ADD_MEMBER_SCREEN, currentRoute),
-                    _buildDrawerItem("Total Member's", Icons.group, AdminRoutes.ADMIN_USER_LIST, currentRoute),
+                    _buildDivider(),
+                    _buildDrawerItem("Add Members", Icons.person_add, AdminRoutes.ADD_MEMBER_SCREEN, currentRoute),
+                    _buildDivider(),
+                    _buildDrawerItem("Members List", Icons.group, AdminRoutes.ADMIN_USER_LIST, currentRoute),
+                    _buildDivider(),
                     _buildDrawerItem("Fee Payments", Icons.payment, AdminRoutes.ADMIN_FEE_PAYMENTS, currentRoute),
+                    _buildDivider(),
                     _buildDrawerItem("Reports", Icons.insert_chart, AdminRoutes.ADMIN_REPORTS, currentRoute),
+                    _buildDivider(),
                     _buildDrawerItem("Diet Menu", Icons.restaurant_menu, AdminRoutes.ADMIN_DIET_MENU, currentRoute),
                     Divider(),
                     _buildDrawerItem("Logout", Icons.logout, AdminRoutes.ADMIN_LOGIN, currentRoute, isLogout: true),
@@ -177,6 +187,17 @@ class _AdminDrawerState extends State<AdminDrawer> {
             }
           },
         ),
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Align(
+      alignment: Alignment.center,
+      child: Container(
+        height: 3.h, // Increased height for a bolder line
+        width: double.infinity, // Full width divider
+        color: Colors.grey[300],
       ),
     );
   }

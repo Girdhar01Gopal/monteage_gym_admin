@@ -1,6 +1,4 @@
 import 'package:get/get.dart';
-
-// Bindings
 import '../../bindings/add_course_binding.dart';
 import '../../bindings/add_member_binding.dart';
 import '../../bindings/admin_active_users_binding.dart';
@@ -14,21 +12,16 @@ import '../../bindings/admin_gym_pass_binding.dart';
 import '../../bindings/admin_manage_plan_binding.dart';
 import '../../bindings/admin_notification_binding.dart';
 import '../../bindings/admin_plan_management_binding.dart';
-import '../../bindings/admin_qr_payment_binding.dart'; // ✅ NEW
+import '../../bindings/admin_qr_payment_binding.dart';
 import '../../bindings/admin_reports_binding.dart';
 import '../../bindings/admin_user_list_binding.dart';
 import '../../bindings/assigned_trainer_binding.dart';
 import '../../bindings/feesummarybindind.dart';
-
-// Controllers
 import '../../bindings/gym_profile_binding.dart';
 import '../../controllers/admin_add_trainer_controller.dart';
 import '../../controllers/admin_login_controller.dart';
 import '../../controllers/admin_settings_controller.dart';
 import '../../controllers/admin_trainer_list_controller.dart';
-
-// Screens
-import '../../controllers/assigned_trainer_controller.dart';
 import '../../screens/AdminFeeSummaryScreen.dart';
 import '../../screens/add_course_screen.dart';
 import '../../screens/add_member_screen.dart';

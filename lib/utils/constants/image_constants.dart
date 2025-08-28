@@ -1,7 +1,6 @@
 class ImageConstatnts {
   static String LOGO = "assets/images/monteage_logo.png";
   static String LOGO1 = "assets/images/logo.jpeg";
-
   static String LOGO_WHITE = "assets/images/monteage_logo_white.PNG";
   static String PERSON = "assets/images/person.png";
   static String GYM = "assets/images/gym.png";

@@ -9,20 +9,48 @@ import '../models/membermodel.dart';
 
 class AdminUserListController extends GetxController {
   final _storage = GetStorage();
+
   var members = <Data>[].obs;
   var filteredMembers = <Data>[].obs;
   var searchQuery = ''.obs;
+
   final imageFile = Rx<File?>(null);
   final expandedCardIndex = (-1).obs;
+
   var gymId;
+
+  // Store trainer assignment by a stable member key
+  final assignedTrainerKeys = <String>{}.obs;
 
   @override
   void onInit() {
     super.onInit();
+    _restoreAssignedState();
     _loadGymId();
   }
 
-  // Load the Gym ID from storage or fallback if invalid
+  void _restoreAssignedState() {
+    final saved = _storage.read<List>('assignedTrainerKeys') ?? [];
+    assignedTrainerKeys.addAll(saved.map((e) => e.toString()));
+  }
+
+  void _persistAssignedState() {
+    _storage.write('assignedTrainerKeys', assignedTrainerKeys.toList());
+  }
+
+  /// Generate a stable key for a member without using `id`
+  String _memberKey(Data m) {
+    String lc(String? s) => (s ?? '').trim().toLowerCase();
+    final phone = lc(m.phone);
+    final email = lc(m.emailid);
+    final name = lc(m.name);
+    final join = (m.joiningDate ?? '').trim();
+
+    if (phone.isNotEmpty) return 'phone:$phone|join:$join';
+    if (email.isNotEmpty) return 'email:$email|join:$join';
+    return 'name:$name|join:$join';
+  }
+
   void _loadGymId() async {
     gymId = await _storage.read('gymId');
     if (gymId == null || gymId == 0) {
@@ -32,10 +60,8 @@ class AdminUserListController extends GetxController {
     _loadMembersFromAPI();
   }
 
-  // Fetch members from API using Gym ID
   Future<void> _loadMembersFromAPI() async {
     final url = Uri.parse("https://montgymapi.eduagentapp.com/api/MonteageGymApp/ViewMember/$gymId");
-    print("Fetching data from URL: $url");
 
     try {
       final response = await http.get(url, headers: {"Content-Type": "application/json"});
@@ -44,9 +70,14 @@ class AdminUserListController extends GetxController {
         final data = json.decode(response.body);
         if (data['statuscode'] == 200) {
           members.assignAll(
-            List<Data>.from(data['data'].map((v) => Data.fromJson(v))),
+            List<Data>.from(
+              data['data'].map((v) {
+                final member = Data.fromJson(v);
+                member.name = capitalizeFirst(member.name ?? "");
+                return member;
+              }),
+            ),
           );
-          // Save the fetched data to local storage
           _storage.write('members', members.toList());
         } else {
           Get.snackbar("Error", "Failed to load members", backgroundColor: Colors.red, colorText: Colors.white);
@@ -58,22 +89,21 @@ class AdminUserListController extends GetxController {
       Get.snackbar("Error", "An error occurred: $e", backgroundColor: Colors.red, colorText: Colors.white);
     }
 
-    // Update the filtered list after loading the data, filtering based on 'Action'
     filteredMembers.assignAll(members);
   }
 
-  // Add a new member to the Active list
   void addMember(Data newMember) {
-    newMember.action = "Active";  // Ensure the new member is added as Active
-    members.add(newMember);  // Add to the list
-    filteredMembers.assignAll(members);  // Update the filtered list to include the new member
+    newMember.action = "Active";
+    newMember.name = capitalizeFirst(newMember.name ?? "");
+    members.add(newMember);
+    filteredMembers.assignAll(members);
+    _storage.write('members', members.toList());
   }
 
   void saveMembers() {
-    _storage.write('members', members.toList());  // Save updated list to local storage
+    _storage.write('members', members.toList());
   }
 
-  // Filter members by name, email, or phone
   void filterMembers(String query) {
     searchQuery.value = query;
     if (query.isEmpty) {
@@ -81,42 +111,45 @@ class AdminUserListController extends GetxController {
     } else {
       final lower = query.toLowerCase();
       filteredMembers.assignAll(members.where((member) {
-        return member.name!.toLowerCase().contains(lower) ||
-            member.emailid!.toLowerCase().contains(lower) ||
-            member.phone!.toLowerCase().contains(lower);
+        final name = member.name ?? '';
+        final email = member.emailid ?? '';
+        final phone = member.phone ?? '';
+        return name.toLowerCase().contains(lower) ||
+            email.toLowerCase().contains(lower) ||
+            phone.toLowerCase().contains(lower);
       }).toList());
     }
   }
 
-  // Toggle card expansion
   void toggleCardExpansion(int index) {
     expandedCardIndex.value = (expandedCardIndex.value == index) ? -1 : index;
   }
 
-  // Delete a member from the list
   void deleteMember(int index) {
-    members.removeAt(index);  // Remove member from list
-    saveMembers();  // Save the updated list to storage
-    filterMembers(searchQuery.value);  // Reapply filter (if any)
+    final m = members[index];
+    final key = _memberKey(m);
+
+    members.removeAt(index);
+    saveMembers();
+
+    assignedTrainerKeys.remove(key);
+    _persistAssignedState();
+
+    filterMembers(searchQuery.value);
     Get.snackbar("Deleted", "Member removed", backgroundColor: Colors.red, colorText: Colors.white);
   }
 
-  // Confirm deletion of a member
-  void deleteMemberWithConfirmation(int index) {
-    Get.defaultDialog(
-      title: "Confirm Deletion",
-      middleText: "Are you sure you want to delete this member?",
-      textCancel: "No",
-      textConfirm: "Yes",
-      confirmTextColor: Colors.white,
-      onConfirm: () {
-        deleteMember(index);
-        Get.back();
-      },
-    );
+  // ---------- Trainer assignment ----------
+  bool isTrainerAssignedForMember(Data member) {
+    return assignedTrainerKeys.contains(_memberKey(member));
   }
 
-  // Show image picker options (Camera/Gallery)
+  void markTrainerAssignedForMember(Data member) {
+    assignedTrainerKeys.add(_memberKey(member));
+    _persistAssignedState();
+  }
+
+  // ---------- Image helpers ----------
   void showImagePickerOptions() {
     Get.bottomSheet(
       Container(
@@ -143,12 +176,29 @@ class AdminUserListController extends GetxController {
     );
   }
 
-  // Pick an image (either from camera or gallery)
   Future<void> _pickImage(ImageSource source) async {
     final picked = await ImagePicker().pickImage(source: source, imageQuality: 80);
     if (picked != null) {
       imageFile.value = File(picked.path);
     }
     Get.back();
+  }
+
+  // ---------- Helpers ----------
+  String cmToFeetInches(String? cmStr) {
+    if (cmStr == null) return "";
+    final parsed = double.tryParse(cmStr.trim());
+    if (parsed == null || parsed <= 0) {
+      return cmStr;
+    }
+    final totalInches = parsed / 2.54;
+    final feet = totalInches ~/ 12;
+    final inches = (totalInches - feet * 12).round();
+    return "$feet' $inches\"";
+  }
+
+  String capitalizeFirst(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1).toLowerCase();
   }
 }

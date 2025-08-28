@@ -58,6 +58,7 @@ dependencies:
   open_file:
   file_picker:
   permission_handler:
+  version:
 
 
 
