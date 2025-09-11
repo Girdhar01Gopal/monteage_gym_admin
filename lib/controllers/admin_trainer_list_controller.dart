@@ -38,7 +38,7 @@ class AdminTrainerListController extends GetxController {
   }
 
   Future<void> fetchTrainersFromAPI() async {
-    final url = Uri.parse("https://montgymapi.eduagentapp.com/api/MonteageGymApp/GetEmployeelist/$gymId");
+      final url = Uri.parse("https://montgymapi.eduagentapp.com/api/MonteageGymApp/GetEmployeelist/$gymId");
 
     try {
       final response = await http.get(url);

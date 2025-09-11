@@ -384,8 +384,8 @@ class AdminFeePaymentsController extends GetxController {
         "RecivedAmount": RecivedAmount,
         "BalanceAmount": BalanceAmount,
         "PaymentStatus": PaymentStatus,
-        "PaymentDate": PaymentDate,           // ISO yyyy-MM-dd
-        "NextPaymentDate": NextPaymentDate,   // ISO yyyy-MM-dd
+        "PaymentDate": PaymentDate,
+        "NextPaymentDate": NextPaymentDate,
         "GymeId": gymId.toString(),
         "UpdateBy": UpdateBy,
       }),
@@ -408,7 +408,6 @@ class AdminFeePaymentsController extends GetxController {
     return text[0].toUpperCase() + text.substring(1).toLowerCase();
   }
 
-  // Try to infer plan duration from data (optional helper, default 1 month)
   int _inferPlanDuration(Map<String, dynamic> feePayment) {
     // If your API returns a duration field, map it here. Example keys:
     for (final key in ['PlanDuration', 'Duration', 'PlanMonths', 'Months']) {

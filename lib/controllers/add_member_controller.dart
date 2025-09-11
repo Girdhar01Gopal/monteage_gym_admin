@@ -15,10 +15,7 @@ class AddMemberController extends GetxController {
   final whatsappController = TextEditingController();
   final emergencyController = TextEditingController();
   final addressController = TextEditingController();
-
-  // Height now entered in FEET on the UI
-  final heightController = TextEditingController();
-
+  final heightController = TextEditingController(); // in FEET now
   final weightController = TextEditingController();
   final joinDateController = TextEditingController();
   final discountController = TextEditingController();
@@ -27,23 +24,17 @@ class AddMemberController extends GetxController {
   final packageExpiryController = TextEditingController();
 
   final selectedPlan = ''.obs;
-  final selectedPlanPrice = 0.obs; // Store the selected plan's price
+  final selectedPlanPrice = 0.obs;
   var gymid;
   final selectedGender = 'Male'.obs;
   final selectedTrainer = 'Personal Trainer'.obs;
-
   final isSameAsPhone = false.obs;
-
   final profileImage = Rx<File?>(null);
   final box = GetStorage();
-
   final RxList plans = [].obs;
   final isLoading = false.obs;
 
-  // Restrict name to letters and spaces only
   final nameFormatter = FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]'));
-
-  // Restrict phone, whatsapp, and emergency to 10 digits only
   final phoneFormatter = FilteringTextInputFormatter.digitsOnly;
   final whatsappFormatter = FilteringTextInputFormatter.digitsOnly;
   final emergencyFormatter = FilteringTextInputFormatter.digitsOnly;
@@ -52,15 +43,7 @@ class AddMemberController extends GetxController {
   void onInit() async {
     super.onInit();
     gymid = await box.read('gymId');
-    if (gymid == null || gymid == 0) {
-      Get.snackbar("Error", "Invalid Gym ID", backgroundColor: Colors.red, colorText: Colors.white);
-    }
-
     await fetchGymPlans();
-
-    if (selectedPlan.value.isNotEmpty) {
-      selectedPlan.value = selectedPlan.value; // retrigger price update
-    }
 
     selectedPlan.listen((plan) {
       final selectedPlanData = plans.firstWhere(
@@ -87,34 +70,24 @@ class AddMemberController extends GetxController {
     });
   }
 
-  // Fetch gym plans
   Future<void> fetchGymPlans() async {
     try {
       final response = await http.get(
         Uri.parse("https://montgymapi.eduagentapp.com/api/MonteageGymApp/PlanBind/$gymid"),
       );
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['statuscode'] == 200) {
           plans.clear();
           plans.addAll(data['data']);
-        } else {
-          Get.snackbar("Error", "Failed to fetch gym plans", backgroundColor: Colors.red, colorText: Colors.white);
         }
-      } else {
-        Get.snackbar("Error", "Failed to connect to the server", backgroundColor: Colors.red, colorText: Colors.white);
       }
-    } catch (e) {
-      Get.snackbar("Error", "An error occurred while fetching plans: $e", backgroundColor: Colors.red, colorText: Colors.white);
-    }
+    } catch (_) {}
   }
 
-  // Update next fee date based on selected plan
   void _updateNextFeeDate(String selectedPlan) {
     DateTime currentDate = DateTime.now();
     DateTime nextFeeDate;
-
     switch (selectedPlan) {
       case 'Platinum':
         nextFeeDate = currentDate.add(const Duration(days: 90));
@@ -129,11 +102,9 @@ class AddMemberController extends GetxController {
         nextFeeDate = currentDate;
         break;
     }
-
     nextFeeDateController.text = DateFormat('yyyy-MM-dd').format(nextFeeDate);
   }
 
-  // Date picker for Join / NextFee / Expiry
   void pickDate(BuildContext context, TextEditingController controller, {bool isJoiningDate = false}) async {
     final picked = await showDatePicker(
       context: context,
@@ -141,7 +112,6 @@ class AddMemberController extends GetxController {
       firstDate: DateTime(2015),
       lastDate: DateTime(2101),
     );
-
     if (picked != null) {
       controller.text = DateFormat('dd-MM-yyyy').format(picked);
       if (isJoiningDate) {
@@ -150,10 +120,8 @@ class AddMemberController extends GetxController {
     }
   }
 
-  // Update package expiry based on selected plan and joining date
   void _updatePackageExpiryDate(DateTime joiningDate) {
     DateTime packageExpiryDate;
-
     switch (selectedPlan.value) {
       case 'Platinum':
         packageExpiryDate = joiningDate.add(const Duration(days: 90));
@@ -168,11 +136,9 @@ class AddMemberController extends GetxController {
         packageExpiryDate = joiningDate;
         break;
     }
-
     packageExpiryController.text = DateFormat('dd-MM-yyyy').format(packageExpiryDate);
   }
 
-  // Add member
   Future<void> addMemberAPI(
       String name,
       int planid,
@@ -182,7 +148,7 @@ class AddMemberController extends GetxController {
       String whatsppno,
       String emergencyno,
       String address,
-      String heightFeet, // height entered in FEET (string)
+      String heightFeet, // store as feet directly
       String weight,
       String gender,
       String Price,
@@ -190,32 +156,10 @@ class AddMemberController extends GetxController {
       String joining,
       String packgeexpiry,
       var gymid,
-      String credit, // creator/admin id
-      String imageBase64, // kept for future use if backend supports
+      String credit,
       ) async {
     if (isLoading.value) return;
     isLoading.value = true;
-
-    Get.snackbar(
-      "Success",
-      "Adding member, please wait...",
-      backgroundColor: Colors.blue,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.TOP,
-      margin: const EdgeInsets.all(12),
-      borderRadius: 8,
-      duration: const Duration(seconds: 1),
-    );
-
-    if (name.isEmpty || phone.isEmpty) {
-      Get.snackbar("Error", "Name and Phone are required fields.", backgroundColor: Colors.red, colorText: Colors.white);
-      isLoading.value = false;
-      return;
-    }
-
-    // Convert FEET → CM before sending to API
-    final double heightFt = double.tryParse(heightFeet.trim()) ?? 0.0;
-    final String heightInCm = (heightFt * 30.48).toStringAsFixed(2);
 
     final member = {
       'Name': name,
@@ -226,7 +170,7 @@ class AddMemberController extends GetxController {
       'WhatsappNo': whatsppno,
       'EmergencyNo': emergencyno,
       'Address': address,
-      'Height': heightInCm,
+      'Height': heightFeet, // FEET only
       'Weight': weight,
       'Gender': gender,
       'Price': Price,
@@ -238,45 +182,12 @@ class AddMemberController extends GetxController {
     };
 
     try {
-      final response = await http.post(
+      await http.post(
         Uri.parse("https://montgymapi.eduagentapp.com/api/MonteageGymApp/MemberPost"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(member),
       );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-
-        if (data['statuscode'] == 200) {
-          Get.snackbar("Success", "Member added successfully!", backgroundColor: Colors.green, colorText: Colors.white, snackPosition: SnackPosition.TOP);
-          Get.back();
-        } else {
-          Get.snackbar("Error", data['message'] ?? "Failed to add member", backgroundColor: Colors.red, colorText: Colors.white);
-        }
-      } else {
-        Get.snackbar("Error", "Failed to communicate with the server", backgroundColor: Colors.red, colorText: Colors.white);
-      }
-    } catch (e) {
-      Get.snackbar("Error", "An error occurred: $e", backgroundColor: Colors.red, colorText: Colors.white);
-    } finally {
-      isLoading.value = false;
-    }
+    } catch (_) {}
+    isLoading.value = false;
   }
 }
-
-
-// Method to pick a date and set it in the given controller
-  void pickDate(BuildContext context, TextEditingController controller) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2015),
-      lastDate: DateTime(2101),
-    );
-
-    if (picked != null) {
-      // Format the date as yyyy-MM-dd and assign it to the controller
-      controller.text = DateFormat('yyyy-MM-dd').format(picked);
-    }
-  }
-

@@ -65,7 +65,7 @@ class AdminManagePlanScreen extends StatelessWidget {
       return const Center(child: Text("No plans found."));
     }
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(00),
       itemCount: plans.length,
       itemBuilder: (context, index) {
         final plan = plans[index];

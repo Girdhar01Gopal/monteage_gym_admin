@@ -7,7 +7,7 @@ import 'package:image_picker/image_picker.dart';
 
 class GymProfileController extends GetxController {
   final _storage = GetStorage();
-  final profile = <String, dynamic>{}.obs;  // Reactive profile data
+  final profile = <String, dynamic>{}.obs;
   final picker = ImagePicker();
 
   late String gymId;
@@ -16,8 +16,6 @@ class GymProfileController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-
-    // Read gymId and gymName from GetStorage
     gymId = _storage.read('gymId')?.toString() ?? "0";
     gymName = _storage.read('gymName')?.toString() ?? "Unknown Gym";
 
@@ -28,39 +26,32 @@ class GymProfileController extends GetxController {
     }
     _loadProfile();
   }
+
   Future<void> _loadProfile() async {
     final url = Uri.parse('https://montgymapi.eduagentapp.com/api/MonteageGymApp/GymProfile/1/$gymId');
-    print("Fetching profile data from: $url");
-
     try {
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        print("API Response Data: $data");
 
-        if (data['statuscode'] == 200 && data['data'] != null && data['data'].isNotEmpty) {
-          // Correctly wrap the data
+        if (data['statuscode'] == 200 && data['data'] != null && (data['data'] as List).isNotEmpty) {
           profile.value = {'data': List<Map<String, dynamic>>.from(data['data'])};
-          print("Profile data updated: ${profile.value}");
         } else {
-          Get.snackbar("Error", "Failed to load gym profile", backgroundColor: Colors.red, colorText: Colors.white);
+          Get.snackbar("Error", "Failed to load gym profile",
+              backgroundColor: Colors.red, colorText: Colors.white);
         }
-
       } else {
-        Get.snackbar("Error", "Failed to load data with status code: ${response.statusCode}", backgroundColor: Colors.red, colorText: Colors.white);
+        Get.snackbar("Error", "Failed to load data (HTTP ${response.statusCode})",
+            backgroundColor: Colors.red, colorText: Colors.white);
       }
     } catch (e) {
-      Get.snackbar("Error", "Something went wrong: $e", backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar("Error", "Something went wrong: $e",
+          backgroundColor: Colors.red, colorText: Colors.white);
     }
   }
 
   // Save the profile data to local storage
-  void saveProfile() {
-    _saveToStorage(); // Save locally after updating
-  }
-
-  // Save the profile to storage
   void _saveToStorage() {
     _storage.write('gym_profile', profile);
   }
@@ -69,40 +60,59 @@ class GymProfileController extends GetxController {
   Future<void> pickLogoImage({required ImageSource source}) async {
     final picked = await picker.pickImage(source: source, imageQuality: 80);
     if (picked != null) {
-      profile['logo'] = picked.path;
-      _saveToStorage(); // Save after picking the new image
+      final map = _ensureDataMap();
+      map['logo'] = picked.path;
+      profile.value = {'data': [map]};
+      _saveToStorage();
     }
-    Get.back(); // Close bottom sheet
+    Get.back(); // Close sheet/dialog if any
   }
 
-  // Update gym profile using the POST API
+  Map<String, dynamic> _ensureDataMap() {
+    final list = profile['data'] as List<dynamic>?;
+    if (list != null && list.isNotEmpty && list.first is Map<String, dynamic>) {
+      return Map<String, dynamic>.from(list.first as Map);
+    }
+    // start blank if missing
+    return <String, dynamic>{'ID': gymId};
+  }
+
+  /// Update gym profile using the POST API
   Future<void> updateGymProfile() async {
+    final map = _ensureDataMap();
+
     final url = Uri.parse("https://montgymapi.eduagentapp.com/api/MonteageGymApp/UpdateGymProfile");
+
+    // Construct payload exactly as backend expects
+    final payload = {
+      "ID": map['ID']?.toString() ?? gymId,
+      "GymName": map['GymName']?.toString() ?? "",
+      "PersonName": map['PersonName']?.toString() ?? "",
+      "ContactNo": map['ContactNo']?.toString() ?? "",
+      "Address": map['Address']?.toString() ?? "",
+      "City": map['City']?.toString() ?? "",
+      "State": map['State']?.toString() ?? "",
+      "Pin": map['Pin']?.toString() ?? "",
+      "GymContactNo": map['GymContactNo']?.toString() ?? "",
+      "EmailId": map['EmailId']?.toString() ?? "",
+      "Websiteurl": map['Websiteurl']?.toString() ?? "",
+      "UpdateBy": gymId,
+      // If your API supports logo/base64, add here (currently omitted)
+      // "LogoBase64": <string?>
+    };
 
     try {
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
-        body: json.encode({
-          "ID": gymId,
-          "GymName": profile['gymName'],
-          "PersonName": profile['ownerName'],
-          "ContactNo": profile['contact'],
-          "Address": profile['address'],
-          "City": profile['city'],
-          "State": profile['state'],
-          "Pin": profile['pincode'],
-          "GymContactNo": profile['contact'],
-          "EmailId": profile['email'],
-          "Websiteurl": profile['website'],
-          "UpdateBy": gymId,
-        }),
+        body: json.encode(payload),
       );
 
       final data = json.decode(response.body);
-
-      if (response.statusCode == 200 && data['statuscode'] == 200) {
-        _storage.write('gym_profile', profile); // Save updated data
+      if (response.statusCode == 200 && (data['statuscode'] == 200 || data['statuscode'] == '200')) {
+        // persist
+        profile.value = {'data': [map]};
+        _saveToStorage();
         Get.snackbar("Success", "Profile updated successfully",
             backgroundColor: Colors.green, colorText: Colors.white);
       } else {

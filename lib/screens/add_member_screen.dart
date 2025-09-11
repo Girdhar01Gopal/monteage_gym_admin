@@ -10,10 +10,7 @@ import '../infrastructure/routes/admin_routes.dart';
 import '../utils/constants/color_constants.dart';
 
 class AddMemberScreen extends StatelessWidget {
-  // Initialize the controller from GetX
   final AddMemberController controller = Get.find<AddMemberController>();
-
-  // Reactive image for selected image
   final Rx<File?> selectedImage = Rx<File?>(null);
   String base64Image = '';
 
@@ -70,41 +67,59 @@ class AddMemberScreen extends StatelessWidget {
             )),
             const SizedBox(height: 16),
 
-            // Personal Information Section
             _buildSectionHeader("Personal Information"),
-            buildTextField("Name", controller.nameController, inputType: TextInputType.text, inputFormatters: [controller.nameFormatter]),
-            buildTextField("Father / Husband Name", controller.fatherController, inputType: TextInputType.text, inputFormatters: [controller.nameFormatter]),
+            buildTextField("Name", controller.nameController),
+            buildReactiveDropdown("Gym Plan", controller.selectedPlan, controller.plans),
+            buildTextField("Father / Husband Name", controller.fatherController),
             buildTextField("Email", controller.emailController),
+            buildTextField("Phone", controller.phoneController),
 
-            // Contact Information Section
-            _buildSectionHeader("Contact Information"),
-            buildTextField("Phone", controller.phoneController, inputType: TextInputType.phone, inputFormatters: [controller.phoneFormatter], maxLength: 10),
-            buildTextField("WhatsApp Number", controller.whatsappController, inputType: TextInputType.phone, inputFormatters: [controller.whatsappFormatter], maxLength: 10),
-            buildTextField("Emergency Number", controller.emergencyController, inputType: TextInputType.phone, inputFormatters: [controller.emergencyFormatter], maxLength: 10),
+            Row(
+              children: [
+                Obx(() => Checkbox(
+                  value: controller.isSameAsPhone.value,
+                  onChanged: (val) => controller.isSameAsPhone.value = val ?? false,
+                )),
+                const Text("Same as phone number"),
+              ],
+            ),
+            Obx(() => buildTextField(
+              "WhatsApp Number",
+              controller.whatsappController,
+              readOnly: controller.isSameAsPhone.value,
+            )),
+
+            buildTextField("Emergency Number", controller.emergencyController),
             buildTextField("Address", controller.addressController),
 
-            // Physical Information Section
             _buildSectionHeader("Physical Information"),
             buildTextField("Height (ft)", controller.heightController),
             buildTextField("Weight (kg)", controller.weightController),
             buildReactiveDropdown("Gender", controller.selectedGender, ['Male', 'Female', 'Other']),
 
-            // Membership Information Section
             _buildSectionHeader("Membership Information"),
             buildTextField("Plan Amount (₹)", controller.planAmountController, readOnly: true),
-            buildTextField("Joining Date", controller.joinDateController, readOnly: true, onTap: () => controller.pickDate(context, controller.joinDateController, isJoiningDate: true)),
+            buildTextField(
+              "Joining Date",
+              controller.joinDateController,
+              readOnly: true,
+              onTap: () => controller.pickDate(context, controller.joinDateController, isJoiningDate: true),
+            ),
             buildTextField("Discount (₹)", controller.discountController),
-            buildTextField("Next Fee Payment Date", controller.nextFeeDateController, readOnly: true, onTap: () => controller.pickDate(context, controller.nextFeeDateController)),
+            buildTextField(
+              "Next Fee Payment Date",
+              controller.nextFeeDateController,
+              readOnly: true,
+              onTap: () => controller.pickDate(context, controller.nextFeeDateController),
+            ),
             buildTextField("Package Expiry Date", controller.packageExpiryController, readOnly: true),
-
             const SizedBox(height: 10),
+
             ElevatedButton(
               onPressed: controller.isLoading.value
                   ? null
                   : () {
                 final gymId = GetStorage().read('gymId') ?? 0;
-
-                // Get selected plan & id
                 final selectedPlanData = controller.plans.firstWhere(
                       (plan) => plan['PlanTittle'] == controller.selectedPlan.value,
                   orElse: () => null,
@@ -117,12 +132,10 @@ class AddMemberScreen extends StatelessWidget {
                   controller.fatherController.text,
                   controller.emailController.text,
                   controller.phoneController.text,
-                  controller.isSameAsPhone.value
-                      ? controller.phoneController.text
-                      : controller.whatsappController.text,
+                  controller.isSameAsPhone.value ? controller.phoneController.text : controller.whatsappController.text,
                   controller.emergencyController.text,
                   controller.addressController.text,
-                  controller.heightController.text,
+                  controller.heightController.text, // keep as feet
                   controller.weightController.text,
                   controller.selectedGender.value,
                   controller.planAmountController.text,
@@ -130,8 +143,7 @@ class AddMemberScreen extends StatelessWidget {
                   controller.joinDateController.text,
                   controller.packageExpiryController.text,
                   gymId.toString(),
-                  '1', // creator/admin id
-                  base64Image.toString(),
+                  '1',
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -149,14 +161,10 @@ class AddMemberScreen extends StatelessWidget {
     );
   }
 
-  // Helper function to create section headers with bold font
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-      ),
+      child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
     );
   }
 
@@ -191,8 +199,6 @@ class AddMemberScreen extends StatelessWidget {
     if (picked != null) {
       final file = File(picked.path);
       selectedImage.value = file;
-
-      // Convert to base64 string
       List<int> imageBytes = await file.readAsBytes();
       base64Image = base64Encode(imageBytes);
     }

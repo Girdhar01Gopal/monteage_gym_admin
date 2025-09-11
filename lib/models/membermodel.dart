@@ -168,8 +168,8 @@ class Data {
     data['Updatedby'] = this.updatedby;
 
     // Serialize the trainer information
-    data['trainerName'] = this.trainerName; // Serialize trainerName
-    data['trainerCharge'] = this.trainerCharge; // Serialize trainerCharge
+    data['trainerName'] = this.trainerName;
+    data['trainerCharge'] = this.trainerCharge;
     return data;
   }
 }

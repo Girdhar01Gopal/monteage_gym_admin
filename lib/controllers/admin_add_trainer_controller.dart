@@ -10,6 +10,8 @@ class AdminAddTrainerController extends GetxController {
   final isSameAsPhone = false.obs;
   final selectedGender = ''.obs;
   final selectedCourseIds = <int>[].obs;
+  final selectedCoursename = <String>[].obs;
+
   final courseMap = <String, int>{}.obs;
 
   late int gymId;
@@ -59,6 +61,7 @@ class AdminAddTrainerController extends GetxController {
     required String starttime,
     required String endtime,
     required String newcourse,
+    required String coursename,
     required String description,
     required String usertype,
     required String gymid,
@@ -94,6 +97,7 @@ class AdminAddTrainerController extends GetxController {
       "StartTime": starttime,
       "EndTime": endtime,
       "CourseId": newcourse,
+      "CourseName" : coursename,
       "Description": description,
       "UserType": usertype,
       "GymeId": gymid,

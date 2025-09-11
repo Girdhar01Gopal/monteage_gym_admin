@@ -185,17 +185,8 @@ class AdminUserListController extends GetxController {
   }
 
   // ---------- Helpers ----------
-  String cmToFeetInches(String? cmStr) {
-    if (cmStr == null) return "";
-    final parsed = double.tryParse(cmStr.trim());
-    if (parsed == null || parsed <= 0) {
-      return cmStr;
-    }
-    final totalInches = parsed / 2.54;
-    final feet = totalInches ~/ 12;
-    final inches = (totalInches - feet * 12).round();
-    return "$feet' $inches\"";
-  }
+  // Height is saved as feet, no conversion needed.
+  String heightInFeet(String? feetStr) => feetStr?.trim() ?? "";
 
   String capitalizeFirst(String text) {
     if (text.isEmpty) return text;

@@ -81,7 +81,7 @@ class _AdminDrawerState extends State<AdminDrawer> {
                     _buildDivider(),
                     _buildDrawerItem("Reports", Icons.insert_chart, AdminRoutes.ADMIN_REPORTS, currentRoute),
                     _buildDivider(),
-                    _buildDrawerItem("Diet Menu", Icons.restaurant_menu, AdminRoutes.ADMIN_DIET_MENU, currentRoute),
+                    _buildDrawerItem("Diet Recommendations", Icons.restaurant_menu, AdminRoutes.ADMIN_DIET_MENU, currentRoute),
                     Divider(),
                     _buildDrawerItem("Logout", Icons.logout, AdminRoutes.ADMIN_LOGIN, currentRoute, isLogout: true),
                   ],

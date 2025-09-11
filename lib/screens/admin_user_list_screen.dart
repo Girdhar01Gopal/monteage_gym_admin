@@ -68,9 +68,6 @@ class AdminUserListScreen extends StatelessWidget {
       return const Center(child: Text("No members found."));
     }
 
-    double screenWidth = MediaQuery.of(context).size.width;
-    double cardWidth = screenWidth > 600 ? 500 : screenWidth * 0.9;
-
     return ListView.builder(
       padding: const EdgeInsets.all(12),
       itemCount: members.length,
@@ -134,7 +131,7 @@ class AdminUserListScreen extends StatelessWidget {
 
                         // ---------------- Health Info ----------------
                         _infoSection("Health Info", [
-                          _info("Height", member.height ?? ""),
+                          _info("Height (ft)", member.height ?? ""),
                           _info("Weight", member.weight ?? ""),
                         ]),
                         const Divider(),
@@ -216,58 +213,6 @@ class AdminUserListScreen extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-
-  Widget buildRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(width: 160, child: Text("$label:", style: const TextStyle(fontWeight: FontWeight.w600))),
-          Expanded(child: Text(value)),
-        ],
-      ),
-    );
-  }
-
-  Widget buildPairRow(String label1, String value1, String label2, String value2) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(width: 0),
-                Expanded(
-                  flex: 5,
-                  child: Text("$label1:", style: const TextStyle(fontWeight: FontWeight.w600)),
-                ),
-                const SizedBox(width: 6),
-                Expanded(flex: 7, child: Text(value1)),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 5,
-                  child: Text("$label2:", style: const TextStyle(fontWeight: FontWeight.w600)),
-                ),
-                const SizedBox(width: 6),
-                Expanded(flex: 7, child: Text(value2)),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 

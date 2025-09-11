@@ -123,6 +123,7 @@ class AddTrainerScreen extends StatelessWidget {
                   onChanged: (val) {
                     if (val == true) {
                       controller.selectedCourseIds.add(courseId);
+                      controller.selectedCoursename.add(courseName);
                     } else {
                       controller.selectedCourseIds.remove(courseId);
                     }
@@ -157,7 +158,7 @@ class AddTrainerScreen extends StatelessWidget {
                   usertype: 'Trainer',
                   gymid: gymId.toString(),
                   createdby: 'admin',
-                  image: base64Image,
+                  image: base64Image, coursename: controller.selectedCoursename.toString(),
                 );
 
                 Get.offAllNamed(AdminRoutes.ADMIN_TRAINER_LIST);

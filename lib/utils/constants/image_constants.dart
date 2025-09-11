@@ -11,4 +11,5 @@ class ImageConstatnts {
   static String RUNNING_ANI = "assets/images/running_ani.jpg";
   static String GYM_PERSON = "assets/images/Gym.jpg";
   static String BACKGOUND = "assets/images/background.jpg";
+
 }
