@@ -8,7 +8,7 @@ class AdminTrainerListController extends GetxController {
   var trainers = <Map<String, dynamic>>[].obs;
   var filteredTrainers = <Map<String, dynamic>>[].obs;
   var searchQuery = ''.obs;
-  var expandedCardIndex = (-1).obs;  // To track expanded card index for showing details
+  var expandedCardIndex = (-1).obs;
 
   late String gymId;
   final box = GetStorage();
@@ -19,7 +19,7 @@ class AdminTrainerListController extends GetxController {
     gymId = box.read('gymId')?.toString() ?? "0";
 
     if (gymId == "0") {
-      Get.snackbar("Error", "Invalid Gym ID. Please login again.",
+      Get.snackbar("Error", "Invalid Gym ID.  Please login again.",
           backgroundColor: Colors.red, colorText: Colors.white);
       return;
     }
@@ -50,7 +50,7 @@ class AdminTrainerListController extends GetxController {
           final parsed = data.map<Map<String, dynamic>>((e) {
             return {
               'id': e['ID'],
-              'name': _capitalizeFirst((e['PersonName'] ?? '').toString()), // ✅ ensure capitalized
+              'name': _capitalizeFirst((e['PersonName'] ?? '').toString()), //  ensure capitalized
               'email': e['EmailId'],
               'phone': e['ContactNo'],
               'whatsapp': e['WhatsappNo'],

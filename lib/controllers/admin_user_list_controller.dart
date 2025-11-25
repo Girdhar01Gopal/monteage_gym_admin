@@ -185,7 +185,6 @@ class AdminUserListController extends GetxController {
   }
 
   // ---------- Helpers ----------
-  // Height is saved as feet, no conversion needed.
   String heightInFeet(String? feetStr) => feetStr?.trim() ?? "";
 
   String capitalizeFirst(String text) {

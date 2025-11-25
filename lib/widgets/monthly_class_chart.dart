@@ -9,7 +9,7 @@ class MonthlyClassChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    final months = ['Jan','Feb','Mar','Apr','May','Jun'];
 
     return AspectRatio(
       aspectRatio: 1.6,
@@ -29,10 +29,11 @@ class MonthlyClassChart extends StatelessWidget {
                       color: Colors.blueAccent,
                       width: 14,
                       borderRadius: BorderRadius.circular(6),
-                    )
+                    ),
                   ],
                 );
-              }),
+               }
+              ),
               titlesData: FlTitlesData(
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(showTitles: false),
@@ -48,7 +49,8 @@ class MonthlyClassChart extends StatelessWidget {
                     showTitles: true,
                     getTitlesWidget: (double value, _) {
                       return Text(
-                        months[value.toInt()],
+                        months[value.toInt()
+                        ],
                         style: TextStyle(fontSize: 10.sp),
                       );
                     },

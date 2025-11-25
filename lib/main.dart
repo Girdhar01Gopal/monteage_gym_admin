@@ -6,7 +6,7 @@ import 'infrastructure/routes/admin_routes.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await GetStorage.init(); // ✅ Initialize GetStorage for local cache
+  await GetStorage.init(); //  Initialize GetStorage for local cache
   runApp(AdminApp());
 }
 
@@ -26,7 +26,7 @@ class AdminApp extends StatelessWidget {
           getPages: AdminRoutes.routes,
           initialRoute: isLoggedIn
               ?AdminRoutes.ADMIN_SPLASH
-              : AdminRoutes.ADMIN_SPLASH, // ✅ Conditional entry
+              : AdminRoutes.ADMIN_SPLASH, //  Conditional entry
           theme: ThemeData(useMaterial3: true),
         );
       },

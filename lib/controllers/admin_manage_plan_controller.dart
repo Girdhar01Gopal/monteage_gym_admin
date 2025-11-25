@@ -10,9 +10,8 @@ class AdminManagePlanController extends GetxController {
   final scrollController = ScrollController();
   RxString searchQuery = ''.obs;
 
-  final String gymId = "1";        // Static, can be dynamic
-  final String createBy = "Admin"; // Default creator
-  final String updateBy = "1";     // Updater identifier
+  final String gymId ="1";         final String createBy = "Admin"; // Default creator
+  final String updateBy = "admin ";
 
   List<GymPlan> get activePlans =>
       filteredPlans.where((p) => p.action.toLowerCase() == "active").toList();

@@ -1,8 +1,8 @@
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services")// Flutter plugin must come last
 }
 
 android {
@@ -41,4 +41,11 @@ android {
 
 flutter {
     source = "../.."
+}
+dependencies {
+    // ✅ Required for core library desugaring (fixes the error)
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
+    implementation ("com.google.android.material:material:1.10.0")
+
 }
